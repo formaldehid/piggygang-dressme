@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "assets:import": "node scripts/import-assets.mjs"
+    "assets:import": "node scripts/import-assets.mjs",
+    "renders:upload": "node scripts/upload-renders.mjs"
   },
   "dependencies": {
+    "@wallet-standard/app": "^1.1.1",
     "next": "16.3.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"

@@ -40,6 +40,8 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const THUMB = 256;
+/** Longest base58 encoding of a 32-byte Solana address. Rows are padded to it. */
+const MINT_WIDTH = 44;
 const ALPHA_CUTOFF = 8;
 const FOCUS_PAD = 0.12;
 /**
@@ -91,6 +93,8 @@ const COLLECTIONS = [
     layers: "piggy-sol-gang-layers",
     renders: "piggy-sol-gang-images",
     canvas: 1080,
+    // These mints are this collection's own, so emit the wallet sidecar.
+    wallet: true,
     stack: [
       "Background",
       "Body",
@@ -129,6 +133,7 @@ const COLLECTIONS = [
     layers: "piggy-girl-gang-layers",
     renders: "piggy-girl-gang-images",
     canvas: 1080,
+    wallet: true,
     stack: [
       "Background",
       "Body",
@@ -156,6 +161,8 @@ const COLLECTIONS = [
     // The same 10,000 tokens as SOL Gang, wearing redrawn art. There is no
     // separate metadata export and none is needed: the token -> trait
     // assignment IS SOL Gang's, translated by the `map` tables below.
+    // Deliberately no `wallet`: these mints belong to SOL Gang, so the sidecar
+    // would be a byte-identical duplicate and a held piggy would list twice.
     meta: "piggy-sol-gang.json",
     // Delivered outside the composer repo, as the folder of category dirs
     // itself — hence `--art piggy-gang=<dir>`.
@@ -876,7 +883,12 @@ function main() {
     // Per-token rows: look code + 3-char rank. A row IS a look code.
     const scored = items.map((item) => {
       const worn = lookOf(config, item, categories);
-      return { id: Number(String(item.name ?? "").replace("#", "")), worn, score: rarityScore(worn, categories, supply) };
+      return {
+        id: Number(String(item.name ?? "").replace("#", "")),
+        mint: item.mint,
+        worn,
+        score: rarityScore(worn, categories, supply),
+      };
     });
     const ids = scored.map((s) => s.id).sort((a, b) => a - b);
     const firstId = ids[0];
@@ -898,6 +910,28 @@ function main() {
       path.join(ROOT, "public", "piggy", config.slug, "tokens.txt"),
       `v1 ${config.slug} ${stride} ${firstId} ${supply} ${codeHash}\n${rows.join("")}\n`,
     );
+
+    // Which mint is which token, so a connected wallet resolves to token ids
+    // entirely offline — the RPC is only ever asked what the wallet holds, never
+    // what it is. Same fixed-stride shape as tokens.txt: row i is token
+    // firstId+i, so no id is stored. Only for collections whose mints are their
+    // own; Piggy Gang re-skins SOL Gang's and would duplicate the file.
+    let mints = null;
+    if (config.wallet) {
+      const mintRows = new Array(supply);
+      for (const s of scored) {
+        assert(typeof s.mint === "string" && s.mint.length > 0 && s.mint.length <= MINT_WIDTH,
+          `${config.slug}: token #${s.id} has no usable mint`);
+        mintRows[s.id - firstId] = s.mint.padEnd(MINT_WIDTH, " ");
+      }
+      assert(new Set(scored.map((s) => s.mint)).size === supply, `${config.slug}: mints are not unique`);
+      fs.writeFileSync(
+        path.join(ROOT, "public", "piggy", config.slug, "mints.txt"),
+        `v1 ${config.slug} ${MINT_WIDTH} ${firstId} ${supply}\n${mintRows.join("")}\n`,
+      );
+      mints = { path: `/piggy/${config.slug}/mints.txt`, width: MINT_WIDTH, firstId, count: supply };
+      console.log(`  wrote mints.txt (${supply} mints)`);
+    }
 
     const curve = scored.map((s) => s.score).sort((a, b) => a - b);
 
@@ -940,6 +974,7 @@ function main() {
       rarityCurve: Array.from({ length: 101 }, (_, i) =>
         Math.round(curve[Math.min(curve.length - 1, Math.floor((i / 100) * curve.length))] * 1e3) / 1e3),
       tokens: { path: `/piggy/${config.slug}/tokens.txt`, stride, firstId, count: supply },
+      mints,
     };
 
     manifest[config.slug] = entry;

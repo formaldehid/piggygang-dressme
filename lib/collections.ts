@@ -35,6 +35,8 @@ export type ReadyCollection = {
   heroLook: string;
   rarityCurve: number[];
   tokens: { path: string; stride: number; firstId: number; count: number };
+  /** `null` disables the wallet picker for this collection. */
+  mints: { path: string; width: number; firstId: number; count: number } | null;
 };
 
 export type ComingSoonCollection = {
@@ -126,6 +128,7 @@ function hydrate(slug: string): ReadyCollection {
     heroLook: generated.heroLook,
     rarityCurve: generated.rarityCurve,
     tokens: generated.tokens,
+    mints: generated.mints,
   };
 }
 

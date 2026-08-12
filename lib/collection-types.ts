@@ -67,4 +67,10 @@ export type GeneratedCollection = {
   /** 101 quantiles of -log10(product of trait frequencies) over real tokens. */
   rarityCurve: number[];
   tokens: { path: string; stride: number; firstId: number; count: number };
+  /**
+   * Which mint is which token, for resolving a connected wallet's holdings
+   * offline. `null` where the collection's mints are not its own — Piggy Gang
+   * re-skins SOL Gang's tokens — which is also what disables its wallet UI.
+   */
+  mints: { path: string; width: number; firstId: number; count: number } | null;
 };

@@ -17,6 +17,7 @@ import { CategoryTabs } from "./category-tabs";
 import { DownloadButton } from "./download-button";
 import { EquippedPanel } from "./equipped-panel";
 import { LoadToken } from "./load-token";
+import { MyPiggies } from "./my-piggies";
 import { TraitGrid } from "./trait-grid";
 
 const ACTION =
@@ -30,8 +31,14 @@ export function WardrobeEditor({ collection }: { collection: ReadyCollection }) 
     synced: false,
   }));
   const [activeId, setActiveId] = useState<CategoryId>(collection.categories[0].id);
-  const [token, setToken] = useState<{ id: number; rank: number } | null>(null);
+  // Which piggy this look came from, and whether it is still that piggy's own
+  // look. Identity is sticky through edits — the point of loading yours is to
+  // change it — while `pristine` is what the rank readout depends on.
+  const [token, setToken] = useState<{ id: number; rank: number; pristine: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const touch = () => setToken((previous) => (previous ? { ...previous, pristine: false } : null));
+  const adopt = (loaded: { id: number; rank: number }) => setToken({ ...loaded, pristine: true });
 
   const setEquipped = (next: Equipped | ((previous: Equipped) => Equipped)) =>
     setState((previous) => ({
@@ -64,7 +71,7 @@ export function WardrobeEditor({ collection }: { collection: ReadyCollection }) 
   const category = collection.categories.find((item) => item.id === activeId) ?? collection.categories[0];
 
   function equip(trait: Trait) {
-    setToken(null);
+    touch();
     setEquipped((previous) => {
       const meta = collection.categories.find((item) => item.id === trait.categoryId);
       const alreadyOn = previous[trait.categoryId] === trait.slug;
@@ -78,7 +85,7 @@ export function WardrobeEditor({ collection }: { collection: ReadyCollection }) 
   }
 
   function clear(categoryId: CategoryId) {
-    setToken(null);
+    touch();
     setEquipped((previous) => ({ ...previous, [categoryId]: null }));
   }
 
@@ -103,8 +110,10 @@ export function WardrobeEditor({ collection }: { collection: ReadyCollection }) 
           <p className="mt-0.5 text-sm text-ink-muted">
             {token ? (
               <>
-                Piggy <span className="font-medium text-ink">#{token.id}</span> — rank {token.rank}{" "}
-                of {collection.supply.toLocaleString("en-US")}
+                Piggy <span className="font-medium text-ink">#{token.id}</span>
+                {token.pristine
+                  ? ` — rank ${token.rank} of ${collection.supply.toLocaleString("en-US")}`
+                  : " — edited"}
               </>
             ) : (
               collection.tagline
@@ -121,7 +130,10 @@ export function WardrobeEditor({ collection }: { collection: ReadyCollection }) 
 
       <div className="lg:grid lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start lg:gap-8">
         <div className="flex flex-col gap-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pb-2">
-          <div className="overflow-hidden rounded-card border border-line bg-surface">
+          {/* shrink-0 is load-bearing: the rail is a flex column that scrolls,
+              and without it this aspect-square box is compressed to nothing as
+              soon as the panels below make the column overflow. */}
+          <div className="shrink-0 overflow-hidden rounded-card border border-line bg-surface">
             <PiggyArt collection={collection} equipped={equipped} eager className="w-full" />
           </div>
 
@@ -136,6 +148,7 @@ export function WardrobeEditor({ collection }: { collection: ReadyCollection }) 
                 setEquipped(randomLook(collection));
               }}
             >
+              {/* A rolled look is nobody's piggy, so identity is dropped entirely. */}
               Surprise me
             </button>
             <button
@@ -153,11 +166,23 @@ export function WardrobeEditor({ collection }: { collection: ReadyCollection }) 
             </button>
           </div>
 
+          {collection.mints && (
+            <MyPiggies
+              collection={collection}
+              mints={collection.mints}
+              selectedId={token?.id ?? null}
+              onLoad={(look, loaded) => {
+                setEquipped(look);
+                adopt(loaded);
+              }}
+            />
+          )}
+
           <LoadToken
             collection={collection}
             onLoad={(look, loaded) => {
               setEquipped(look);
-              setToken(loaded);
+              adopt(loaded);
             }}
           />
 
