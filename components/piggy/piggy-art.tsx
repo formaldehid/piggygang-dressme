@@ -13,9 +13,9 @@ import {
 const FULL_FRAME: Rect = { x: 0, y: 0, w: 1, h: 1 };
 
 /**
- * Percentage box that zooms the 1080 canvas onto a category's art. A raw
- * Earring layer occupies about 200x480 of 1080px — without this it is an
- * 11-pixel smudge in a grid cell.
+ * Percentage box that zooms the canvas onto a category's art. A raw Earring
+ * layer occupies about a fifth of the frame — without this it is an 11-pixel
+ * smudge in a grid cell.
  */
 function frame(focus: Rect): CSSProperties {
   return {
@@ -59,11 +59,14 @@ export function PiggyArt({
             key={layer.key}
             src={layer.src}
             alt=""
-            width={1080}
-            height={1080}
+            width={collection.canvas}
+            height={collection.canvas}
             draggable={false}
             decoding="async"
             loading={eager ? "eager" : "lazy"}
+            // The preview is the LCP element and competes with a screenful of
+            // lazy thumbs on the same connection.
+            fetchPriority={eager ? "high" : "auto"}
             className="absolute inset-0 h-full w-full select-none"
           />
         ))}

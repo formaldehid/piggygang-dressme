@@ -44,7 +44,7 @@ export function DownloadButton({
             Render failed — please try again.
           </span>
         ) : (
-          "1080 × 1080, same layers as the original art"
+          `${collection.canvas} × ${collection.canvas}, same layers as the original art`
         )}
       </p>
     </div>
