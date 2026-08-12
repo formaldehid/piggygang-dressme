@@ -1,65 +1,117 @@
-import type { Ref } from "react";
+import type { CSSProperties } from "react";
 import {
-  CATEGORY_ORDER,
-  type CategoryId,
-  type Collection,
+  categoryOf,
+  describeLook,
+  layerSources,
+  mannequinEquipped,
+  type Equipped,
+  type ReadyCollection,
+  type Rect,
   type Trait,
 } from "@/lib/collections";
-import { ART_SIZE, TraitLayer } from "./trait-layer";
 
-export type Equipped = Record<CategoryId, string | null>;
+const FULL_FRAME: Rect = { x: 0, y: 0, w: 1, h: 1 };
 
-const VIEW_BOX = `0 0 ${ART_SIZE} ${ART_SIZE}`;
-
-function describe(collection: Collection, equipped: Equipped): string {
-  const worn = CATEGORY_ORDER.map((category) => equipped[category])
-    .map((id) => collection.traits.find((trait) => trait.id === id)?.name)
-    .filter(Boolean);
-  return `${collection.name} piggy wearing ${worn.join(", ")}`;
+/**
+ * Percentage box that zooms the 1080 canvas onto a category's art. A raw
+ * Earring layer occupies about 200x480 of 1080px — without this it is an
+ * 11-pixel smudge in a grid cell.
+ */
+function frame(focus: Rect): CSSProperties {
+  return {
+    width: `${100 / focus.w}%`,
+    height: `${100 / focus.h}%`,
+    left: `${(-focus.x / focus.w) * 100}%`,
+    top: `${(-focus.y / focus.h) * 100}%`,
+  };
 }
 
-/** The composed collectible: every equipped trait stacked in CATEGORY_ORDER. */
+/** The composed collectible: every equipped layer stacked in paint order. */
 export function PiggyArt({
   collection,
   equipped,
-  svgRef,
+  tier = "full",
+  focus = FULL_FRAME,
   className,
+  eager = false,
 }: {
-  collection: Collection;
+  collection: ReadyCollection;
   equipped: Equipped;
-  svgRef?: Ref<SVGSVGElement>;
+  tier?: "full" | "thumb";
+  focus?: Rect;
   className?: string;
+  eager?: boolean;
 }) {
-  const byId = new Map(collection.traits.map((trait) => [trait.id, trait]));
+  const layers = layerSources(collection, equipped, tier);
 
   return (
-    <svg
-      ref={svgRef}
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox={VIEW_BOX}
-      className={className}
+    <div
       role="img"
-      aria-label={describe(collection, equipped)}
+      aria-label={describeLook(collection, equipped)}
+      className={`relative isolate aspect-square overflow-hidden ${className ?? ""}`}
     >
-      {CATEGORY_ORDER.map((category) => {
-        const id = equipped[category];
-        const trait = id ? byId.get(id) : undefined;
-        return trait ? <TraitLayer key={category} trait={trait} /> : null;
-      })}
-    </svg>
+      <div className="absolute" style={frame(focus)}>
+        {layers.map((layer) => (
+          // Keyed by the stack step, never by src: React then mutates src on
+          // the same node, so the browser keeps painting the previous bitmap
+          // until the new one decodes instead of flashing empty.
+          <img
+            key={layer.key}
+            src={layer.src}
+            alt=""
+            width={1080}
+            height={1080}
+            draggable={false}
+            decoding="async"
+            loading={eager ? "eager" : "lazy"}
+            className="absolute inset-0 h-full w-full select-none"
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
-/** A single trait, drawn over a faint body so off-face traits stay readable. */
-export function TraitThumb({ trait, base }: { trait: Trait; base?: Trait }) {
+/**
+ * A single trait as a paper doll — mannequin body plus the trait, framed on
+ * that category's art. Same resolver as the preview, so there is no second
+ * rendering path to keep in sync.
+ */
+export function TraitThumb({
+  collection,
+  trait,
+}: {
+  collection: ReadyCollection;
+  trait: Trait;
+}) {
+  const category = categoryOf(collection, trait.categoryId);
+
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox={VIEW_BOX} className="h-full w-full" aria-hidden="true">
-      {trait.category !== "background" && base && (
-        <g opacity="0.16">
-          <TraitLayer trait={base} />
-        </g>
-      )}
-      <TraitLayer trait={trait} />
-    </svg>
+    <PiggyArt
+      collection={collection}
+      tier="thumb"
+      focus={category.focus}
+      equipped={{ ...mannequinEquipped(collection), [trait.categoryId]: trait.slug }}
+    />
+  );
+}
+
+/** The empty-slot tile: the mannequin with nothing in that category. */
+export function EmptyThumb({
+  collection,
+  categoryId,
+}: {
+  collection: ReadyCollection;
+  categoryId: string;
+}) {
+  const category = categoryOf(collection, categoryId);
+
+  return (
+    <PiggyArt
+      collection={collection}
+      tier="thumb"
+      focus={category.focus}
+      equipped={{ ...mannequinEquipped(collection), [categoryId]: null }}
+    />
   );
 }

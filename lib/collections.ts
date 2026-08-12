@@ -1,276 +1,332 @@
+import { GENERATED } from "./collections.generated";
+import type {
+  CategoryId,
+  GeneratedCategory,
+  GeneratedTrait,
+  LayerStep,
+  TraitId,
+} from "./collection-types";
+
+export type { CategoryId, LayerStep, Rect, TraitId } from "./collection-types";
+
+export type Trait = GeneratedTrait & { id: TraitId; categoryId: CategoryId };
+export type Category = Omit<GeneratedCategory, "traits"> & { traits: Trait[] };
+
+/** Equipped trait **slug** per category; `null` means the slot is empty. */
+export type Equipped = Record<CategoryId, string | null>;
+
+export type ReadyCollection = {
+  status: "ready";
+  slug: string;
+  name: string;
+  tagline: string;
+  accent: string;
+  supply: number;
+  /** Tab order — presentation, deliberately not the paint order. */
+  categories: Category[];
+  bodyCategoryId: CategoryId;
+  mannequinBody: string;
+  stack: LayerStep[];
+  codeOrder: CategoryId[];
+  codeHash: string;
+  defaultLook: string;
+  heroLook: string;
+  rarityCurve: number[];
+  tokens: { path: string; stride: number; firstId: number; count: number };
+};
+
+export type ComingSoonCollection = {
+  status: "coming-soon";
+  slug: string;
+  name: string;
+  tagline: string;
+  accent: string;
+};
+
+export type Collection = ReadyCollection | ComingSoonCollection;
+
 /**
- * Collection + trait data for the wardrobe editor.
- *
- * The real trait artwork does not exist yet, so every trait here is described
- * as a `variant` (which silhouette to draw) plus a two-colour palette. The
- * drawing itself lives in `components/piggy/trait-layer.tsx`. Keeping traits as
- * plain serializable objects matters: a Server Component page passes them
- * straight across the boundary into the client-side editor.
+ * Hand-authored copy and ordering. Everything else about a collection is
+ * derived from the source art by `scripts/import-assets.mjs`, so re-running
+ * the importer never clobbers what is written here.
  */
-
-/** Also the z-order the layers are painted in: first entry is furthest back. */
-export const CATEGORY_ORDER = [
-  "background",
-  "body",
-  "outfit",
-  "mouth",
-  "eyes",
-  "headwear",
-  "accessory",
-] as const;
-
-export type CategoryId = (typeof CATEGORY_ORDER)[number];
-
-export type Trait = {
-  id: string;
-  name: string;
-  category: CategoryId;
-  variant: number;
-  colors: [string, string];
-};
-
-export type Category = {
-  id: CategoryId;
-  label: string;
-  /** Optional categories can be left empty; required ones always have something equipped. */
-  optional: boolean;
-};
-
-export type Collection = {
-  slug: string;
-  name: string;
-  tagline: string;
-  supply: number;
-  /** Drives the card glow and the editor's active-state chrome. */
-  accent: string;
-  traits: Trait[];
-};
-
-export const CATEGORIES: Category[] = [
-  { id: "background", label: "Background", optional: false },
-  { id: "body", label: "Skin", optional: false },
-  { id: "outfit", label: "Outfit", optional: true },
-  { id: "mouth", label: "Mouth", optional: false },
-  { id: "eyes", label: "Eyes", optional: false },
-  { id: "headwear", label: "Headwear", optional: true },
-  { id: "accessory", label: "Accessory", optional: true },
-];
-
-type Spec = readonly [name: string, c0: string, c1: string];
-
-/** Eyes and mouths read the same across all three collections. */
-const EYES: readonly Spec[] = [
-  ["Beady", "#1f2937", "#ffffff"],
-  ["Sleepy", "#1f2937", "#1f2937"],
-  ["Wink", "#1f2937", "#ffffff"],
-  ["Sparkle", "#1f2937", "#ffffff"],
-  ["Laser", "#ff2d55", "#ff8fa3"],
-];
-
-const MOUTHS: readonly Spec[] = [
-  ["Smile", "#7f1d1d", "#ffffff"],
-  ["Grin", "#7f1d1d", "#ffffff"],
-  ["Smirk", "#7f1d1d", "#ffffff"],
-  ["Oh!", "#7f1d1d", "#ef7d94"],
-];
-
-type Recipe = {
-  slug: string;
-  name: string;
-  tagline: string;
-  supply: number;
-  accent: string;
-  backgrounds: readonly Spec[];
-  skins: readonly Spec[];
-  outfits: readonly Spec[];
-  headwear: readonly Spec[];
-  accessories: readonly Spec[];
-};
-
-const RECIPES: Recipe[] = [
-  {
-    slug: "piggy-sol-gang",
+const PRESENTATION: Record<
+  string,
+  { name: string; tagline: string; accent: string; tabOrder: CategoryId[] }
+> = {
+  "piggy-sol-gang": {
     name: "Piggy SOL Gang",
-    tagline: "The originals, straight off the chain.",
-    supply: 3333,
+    tagline: "Ten thousand piggies, straight off the chain.",
     accent: "#9945ff",
-    backgrounds: [
-      ["Solana Night", "#120a2a", "#9945ff"],
-      ["Validator", "#0a1f1a", "#14f195"],
-      ["Mainnet", "#1a1030", "#7c3aed"],
-      ["Devnet", "#0d1b2a", "#38bdf8"],
-      ["Airdrop", "#2a1030", "#f472b6"],
-      ["Bull Run", "#2a1a0a", "#fbbf24"],
-    ],
-    skins: [
-      ["Classic Pink", "#ffb3c9", "#f78fb0"],
-      ["Chrome", "#cfd8e3", "#a8b6c6"],
-      ["Cocoa", "#c98f6f", "#a97155"],
-    ],
-    outfits: [
-      ["Dev Hoodie", "#5b21b6", "#7c3aed"],
-      ["Gold Chain", "#ffd166", "#f59e0b"],
-      ["Validator Scarf", "#14f195", "#0e9f6e"],
-      ["Airdrop Tee", "#22d3ee", "#0891b2"],
-      ["Tux", "#111827", "#e5e7eb"],
-      ["Puffer", "#f472b6", "#db2777"],
-    ],
-    headwear: [
-      ["Snapback", "#7c3aed", "#4c1d95"],
-      ["Crown", "#ffd166", "#f59e0b"],
-      ["Beanie", "#14f195", "#0e9f6e"],
-      ["Halo", "#fde68a", "#fbbf24"],
-      ["Cowboy", "#a97155", "#7c4a2d"],
-      ["Horns", "#ef4444", "#991b1b"],
-    ],
-    accessories: [
-      ["Shades", "#111827", "#374151"],
-      ["Earring", "#ffd166", "#f59e0b"],
-      ["Cigar", "#7c4a2d", "#f97316"],
-      ["Blush", "#ff8fa3", "#ff5c7a"],
-      ["Monocle", "#e5e7eb", "#9ca3af"],
-    ],
+    tabOrder: ["body", "eyes", "mouth", "clothes", "head", "earring", "background"],
   },
-  {
-    slug: "piggy-girl-gang",
+  "piggy-girl-gang": {
     name: "Piggy Girl Gang",
-    tagline: "Pastel piggies with a mean streak.",
-    supply: 2222,
+    tagline: "Pretty, fierce and dressed for it.",
     accent: "#ff8ec4",
-    backgrounds: [
-      ["Bubblegum", "#2a1020", "#ff8ec4"],
-      ["Lilac Haze", "#1c1430", "#c9a6ff"],
-      ["Peach Fizz", "#2e1618", "#ffb4a2"],
-      ["Cotton Sky", "#141c2e", "#a6d8ff"],
-      ["Mint Cream", "#0f2420", "#9ff0d0"],
-      ["Golden Hour", "#2c1c0c", "#ffd166"],
-    ],
-    skins: [
-      ["Blush Pink", "#ffc2d6", "#ff9dbb"],
-      ["Rose Gold", "#ffc9b3", "#f0a184"],
-      ["Mocha", "#c98f6f", "#a97155"],
-    ],
-    outfits: [
-      ["Cardigan", "#c9a6ff", "#a97dff"],
-      ["Pearls", "#f8f5ff", "#d8cfe8"],
-      ["Silk Scarf", "#ff8ec4", "#e5619b"],
-      ["Crop Tee", "#9ff0d0", "#4ec99b"],
-      ["Ballgown", "#ffb4a2", "#e58b76"],
-      ["Puffer", "#a6d8ff", "#6bb6e8"],
-    ],
-    headwear: [
-      ["Bow", "#ff8ec4", "#e5619b"],
-      ["Tiara", "#ffd166", "#f59e0b"],
-      ["Beret", "#c9a6ff", "#a97dff"],
-      ["Halo", "#fde68a", "#fbbf24"],
-      ["Sun Hat", "#ffe0b3", "#e8bd83"],
-      ["Devil Horns", "#ff5fa2", "#c9316f"],
-    ],
-    accessories: [
-      ["Heart Shades", "#ff5fa2", "#ffd1e4"],
-      ["Hoops", "#ffd166", "#f59e0b"],
-      ["Lollipop", "#ff8ec4", "#ffffff"],
-      ["Blush", "#ff8fa3", "#ff5c7a"],
-      ["Monocle", "#e5e7eb", "#9ca3af"],
-    ],
+    tabOrder: ["body", "eyes", "mouth", "clothes", "hair", "hats", "earring", "background"],
   },
+};
+
+const COMING_SOON: ComingSoonCollection[] = [
   {
+    status: "coming-soon",
     slug: "piggy-gang",
     name: "Piggy Gang",
-    tagline: "Muddy, gold-plated and completely feral.",
-    supply: 4444,
-    accent: "#ff5fa2",
-    backgrounds: [
-      ["Pink Static", "#2a0f1c", "#ff5fa2"],
-      ["Gold Rush", "#2a1e08", "#ffd166"],
-      ["Mud Bath", "#1e1512", "#a97155"],
-      ["Neon Sty", "#12142a", "#7dd3fc"],
-      ["Truffle", "#181022", "#b388ff"],
-      ["Sunset Pen", "#2d1410", "#ff8a5b"],
-    ],
-    skins: [
-      ["Classic Pink", "#ffb3c9", "#f78fb0"],
-      ["Mud Caked", "#b08968", "#8c6a4f"],
-      ["Midnight", "#6b7280", "#4b5563"],
-    ],
-    outfits: [
-      ["Hoodie", "#374151", "#111827"],
-      ["Gold Chain", "#ffd166", "#f59e0b"],
-      ["Bandana", "#ef4444", "#b91c1c"],
-      ["Jersey", "#22d3ee", "#0891b2"],
-      ["Tux", "#111827", "#e5e7eb"],
-      ["Overalls", "#3b82f6", "#1d4ed8"],
-    ],
-    headwear: [
-      ["Trucker Cap", "#ef4444", "#991b1b"],
-      ["Crown", "#ffd166", "#f59e0b"],
-      ["Beanie", "#f97316", "#c2410c"],
-      ["Halo", "#fde68a", "#fbbf24"],
-      ["Cowboy", "#a97155", "#7c4a2d"],
-      ["Horns", "#ff5fa2", "#c9316f"],
-    ],
-    accessories: [
-      ["Shades", "#111827", "#374151"],
-      ["Gold Tooth", "#ffd166", "#f59e0b"],
-      ["Cigar", "#7c4a2d", "#f97316"],
-      ["Blush", "#ff8fa3", "#ff5c7a"],
-      ["Monocle", "#e5e7eb", "#9ca3af"],
-    ],
+    tagline: "Trait art on the way.",
+    accent: "#ffd166",
   },
 ];
 
-const slugify = (value: string) =>
-  value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+function hydrate(slug: string): ReadyCollection {
+  const generated = GENERATED[slug];
+  const presentation = PRESENTATION[slug];
 
-function build(
-  slug: string,
-  category: CategoryId,
-  specs: readonly Spec[],
-  variantCount: number,
-): Trait[] {
-  return specs.map(([name, c0, c1], index) => ({
-    id: `${slug}-${category}-${slugify(name)}`,
-    name,
-    category,
-    variant: index % variantCount,
-    colors: [c0, c1] as [string, string],
+  const categories: Category[] = generated.categories.map((category) => ({
+    ...category,
+    traits: category.traits.map((trait) => ({
+      ...trait,
+      id: `${category.id}:${trait.slug}`,
+      categoryId: category.id,
+    })),
   }));
+
+  const order = presentation.tabOrder;
+  categories.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+
+  return {
+    status: "ready",
+    slug,
+    name: presentation.name,
+    tagline: presentation.tagline,
+    accent: presentation.accent,
+    supply: generated.supply,
+    categories,
+    bodyCategoryId: generated.bodyCategoryId,
+    mannequinBody: generated.mannequinBody,
+    stack: generated.stack,
+    codeOrder: generated.codeOrder,
+    codeHash: generated.codeHash,
+    defaultLook: generated.defaultLook,
+    heroLook: generated.heroLook,
+    rarityCurve: generated.rarityCurve,
+    tokens: generated.tokens,
+  };
 }
 
-export const COLLECTIONS: Collection[] = RECIPES.map((recipe) => ({
-  slug: recipe.slug,
-  name: recipe.name,
-  tagline: recipe.tagline,
-  supply: recipe.supply,
-  accent: recipe.accent,
-  traits: [
-    ...build(recipe.slug, "background", recipe.backgrounds, 3),
-    ...build(recipe.slug, "body", recipe.skins, 3),
-    ...build(recipe.slug, "outfit", recipe.outfits, 6),
-    ...build(recipe.slug, "mouth", MOUTHS, 4),
-    ...build(recipe.slug, "eyes", EYES, 5),
-    ...build(recipe.slug, "headwear", recipe.headwear, 6),
-    ...build(recipe.slug, "accessory", recipe.accessories, 5),
-  ],
-}));
+const READY: ReadyCollection[] = Object.keys(GENERATED)
+  .filter((slug) => PRESENTATION[slug])
+  .map(hydrate);
+
+export const COLLECTIONS: Collection[] = [...READY, ...COMING_SOON];
 
 export function getCollection(slug: string): Collection | undefined {
   return COLLECTIONS.find((collection) => collection.slug === slug);
 }
 
-export function traitsByCategory(collection: Collection, category: CategoryId): Trait[] {
-  return collection.traits.filter((trait) => trait.category === category);
+/** Only collections that actually have art — used by routing and metadata. */
+export function getReadyCollection(slug: string): ReadyCollection | undefined {
+  return READY.find((collection) => collection.slug === slug);
 }
 
-/** The starting outfit: first trait of each required category, optionals empty. */
-export function defaultEquipped(collection: Collection): Record<CategoryId, string | null> {
-  const equipped = {} as Record<CategoryId, string | null>;
-  for (const category of CATEGORIES) {
-    const first = traitsByCategory(collection, category.id)[0];
-    equipped[category.id] = category.optional ? null : (first?.id ?? null);
+export function categoryOf(collection: ReadyCollection, id: CategoryId): Category {
+  const category = collection.categories.find((item) => item.id === id);
+  if (!category) throw new Error(`${collection.slug} has no category "${id}"`);
+  return category;
+}
+
+export function traitOf(
+  collection: ReadyCollection,
+  equipped: Equipped,
+  categoryId: CategoryId,
+): Trait | null {
+  const slug = equipped[categoryId];
+  if (!slug) return null;
+  return categoryOf(collection, categoryId).traits.find((trait) => trait.slug === slug) ?? null;
+}
+
+// ------------------------------------------------------------- compositing
+
+export type ResolvedLayer = { key: string; src: string };
+
+/**
+ * Turns an equipped map into the ordered list of images to paint.
+ *
+ * This is the whole compositor. It names no category explicitly — the paint
+ * order and the derived Body layers (head and both ears, keyed by the Body
+ * colour and interleaved so they sit correctly around clothes and hats) come
+ * from `collection.stack`, which is generated from the source art and verified
+ * pixel-exact against the official renders.
+ */
+export function layerSources(
+  collection: ReadyCollection,
+  equipped: Equipped,
+  tier: "full" | "thumb",
+): ResolvedLayer[] {
+  const base = `/piggy/${collection.slug}/${tier}`;
+  const layers: ResolvedLayer[] = [];
+
+  for (const step of collection.stack) {
+    if (step.kind === "derived") {
+      const body = traitOf(collection, equipped, step.fromCategoryId);
+      if (!body) continue;
+      layers.push({ key: step.dir, src: `${base}/${step.dir}/${body.slug}.${body.ext}` });
+    } else {
+      const trait = traitOf(collection, equipped, step.categoryId);
+      if (!trait) continue;
+      const dir = categoryOf(collection, step.categoryId).dir;
+      layers.push({ key: step.categoryId, src: `${base}/${dir}/${trait.slug}.${trait.ext}` });
+    }
   }
+
+  return layers;
+}
+
+export function describeLook(collection: ReadyCollection, equipped: Equipped): string {
+  const worn = collection.categories
+    .map((category) => traitOf(collection, equipped, category.id)?.name)
+    .filter(Boolean);
+  return `${collection.name} piggy wearing ${worn.join(", ")}`;
+}
+
+// -------------------------------------------------------------- look codes
+
+/** 64 chars, every one unreserved in RFC 3986 — a look code never percent-encodes. */
+export const LOOK_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
+const ALPHABET = LOOK_ALPHABET;
+
+function slotValues(collection: ReadyCollection, categoryId: CategoryId): (Trait | null)[] {
+  const category = categoryOf(collection, categoryId);
+  return category.optional ? [null, ...category.traits] : [...category.traits];
+}
+
+export function encodeLook(collection: ReadyCollection, equipped: Equipped): string {
+  return collection.codeOrder
+    .map((categoryId) => {
+      const values = slotValues(collection, categoryId);
+      const index = values.findIndex((value) =>
+        value === null ? equipped[categoryId] === null : value.slug === equipped[categoryId],
+      );
+      return ALPHABET[index === -1 ? 0 : index];
+    })
+    .join("");
+}
+
+/**
+ * All-or-nothing: any bad character, wrong length or out-of-range index
+ * rejects the whole code, so a hand-edited URL falls back to the default look
+ * rather than rendering a half-broken piggy.
+ */
+export function decodeLook(collection: ReadyCollection, code: string): Equipped | null {
+  if (code.length !== collection.codeOrder.length) return null;
+
+  const equipped: Equipped = {};
+  for (let i = 0; i < code.length; i += 1) {
+    const index = ALPHABET.indexOf(code[i]);
+    if (index === -1) return null;
+    const categoryId = collection.codeOrder[i];
+    const values = slotValues(collection, categoryId);
+    if (index >= values.length) return null;
+    equipped[categoryId] = values[index]?.slug ?? null;
+  }
+  return equipped;
+}
+
+export function defaultEquipped(collection: ReadyCollection): Equipped {
+  return decodeLook(collection, collection.defaultLook) ?? emptyEquipped(collection);
+}
+
+export function emptyEquipped(collection: ReadyCollection): Equipped {
+  const equipped: Equipped = {};
+  for (const category of collection.categories) equipped[category.id] = null;
+  return equipped;
+}
+
+/** Body only — the backdrop for a trait thumbnail. */
+export function mannequinEquipped(collection: ReadyCollection): Equipped {
+  return { ...emptyEquipped(collection), [collection.bodyCategoryId]: collection.mannequinBody };
+}
+
+// ----------------------------------------------------------------- rarity
+
+export function traitPercent(collection: ReadyCollection, count: number): number {
+  return (count / collection.supply) * 100;
+}
+
+/** Tokens with this slot filled by nothing — the "None" tile's own rarity. */
+export function slotCount(
+  collection: ReadyCollection,
+  equipped: Equipped,
+  category: Category,
+): number {
+  const trait = traitOf(collection, equipped, category.id);
+  return trait ? trait.count : category.noneCount;
+}
+
+/** -log10 of the product of trait frequencies. Bigger is rarer. */
+export function lookScore(collection: ReadyCollection, equipped: Equipped): number {
+  let score = 0;
+  for (const category of collection.categories) {
+    const count = slotCount(collection, equipped, category);
+    if (count > 0) score += -Math.log10(count / collection.supply);
+  }
+  return score;
+}
+
+/**
+ * Where this look sits against every real token, 0-100. Raw scores run from
+ * 1-in-378K to 1-in-31-billion, which means nothing to a reader; a percentile
+ * against the actual collection does.
+ */
+export function rarityPercentile(collection: ReadyCollection, equipped: Equipped): number {
+  const score = lookScore(collection, equipped);
+  const curve = collection.rarityCurve;
+  let percentile = 0;
+  for (let i = 0; i < curve.length; i += 1) {
+    if (curve[i] <= score) percentile = i;
+    else break;
+  }
+  return percentile;
+}
+
+/** "1 in 4.2M" — the odds of rolling this look from the real trait pools. */
+export function oneInOdds(collection: ReadyCollection, equipped: Equipped): string {
+  const odds = 10 ** lookScore(collection, equipped);
+  if (odds >= 1e9) return `1 in ${(odds / 1e9).toFixed(1)}B`;
+  if (odds >= 1e6) return `1 in ${(odds / 1e6).toFixed(1)}M`;
+  if (odds >= 1e3) return `1 in ${(odds / 1e3).toFixed(0)}K`;
+  return `1 in ${Math.round(odds)}`;
+}
+
+/**
+ * A random look weighted by real trait frequencies, flattened with a square
+ * root. True odds would hand you the most common skin 38% of the time and feel
+ * broken; uniform ignores the collection entirely.
+ */
+export function randomLook(collection: ReadyCollection, random: () => number = Math.random): Equipped {
+  const equipped: Equipped = {};
+
+  for (const category of collection.categories) {
+    const options: { slug: string | null; weight: number }[] = category.traits.map((trait) => ({
+      slug: trait.slug,
+      weight: Math.sqrt(trait.count),
+    }));
+    if (category.optional && category.noneCount > 0) {
+      options.push({ slug: null, weight: Math.sqrt(category.noneCount) });
+    }
+
+    const total = options.reduce((sum, option) => sum + option.weight, 0);
+    let roll = random() * total;
+    let chosen = options[options.length - 1];
+    for (const option of options) {
+      roll -= option.weight;
+      if (roll <= 0) {
+        chosen = option;
+        break;
+      }
+    }
+    equipped[category.id] = chosen.slug;
+  }
+
   return equipped;
 }

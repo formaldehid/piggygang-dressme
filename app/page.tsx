@@ -26,9 +26,9 @@ export default function Home() {
             Collections
           </h2>
           <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {COLLECTIONS.map((collection, index) => (
+            {COLLECTIONS.map((collection) => (
               <li key={collection.slug} className="flex">
-                <CollectionCard collection={collection} index={index} />
+                <CollectionCard collection={collection} />
               </li>
             ))}
           </ul>

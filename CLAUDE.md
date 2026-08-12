@@ -29,4 +29,21 @@ Next.js 16.3.0 App Router project (fresh create-next-app) with TypeScript strict
 - Layouts/pages use Next 16's generated route-typed props (e.g. `LayoutProps<"/">`) as ambient globals — no import needed. These types are generated into `.next/types` and `.next/dev/types`, which tsconfig includes; `pnpm exec next typegen` generates them without a full build.
 - Styling is Tailwind CSS v4 via the `@tailwindcss/postcss` plugin: there is no tailwind.config file; theme tokens are defined in `app/globals.css` using `@import "tailwindcss"` and `@theme inline`. Dark mode follows `prefers-color-scheme`.
 - Path alias `@/*` maps to the repo root.
-- `pnpm-workspace.yaml` exists only for pnpm settings (`allowBuilds`); this is not a monorepo.
+- `pnpm-workspace.yaml` exists only for pnpm settings (`allowBuilds`); this is not a monorepo. Note it disables the `sharp` build, so `next/image` optimisation is unavailable — trait layers use plain `<img>` with a scoped lint override in `eslint.config.mjs`.
+
+## Trait art
+
+`public/piggy/**` and `lib/collections.generated.ts` are **generated** from the
+`piggy-image-composer` repo (minted layer PNGs + collection metadata) by
+`scripts/import-assets.mjs`, and committed because that repo does not exist on
+the deploy host. Re-run only when the source art changes:
+
+```
+pnpm assets:import --source ../../piggydao/piggy-image-composer --verify 8
+```
+
+- Do not hand-edit `lib/collections.generated.ts`. Hand-authored copy (names, taglines, accents, tab order) lives in `lib/collections.ts`; shared types in `lib/collection-types.ts`.
+- Layer paint order lives in the generated `stack`, not in code. `BodyHead`/`BodyLeftEar`/`BodyRightEar` are not traits — they are art keyed by the **Body** value, interleaved so ears sit correctly around clothes and hats. `layerSources()` in `lib/collections.ts` is the entire compositor and names no category explicitly.
+- A category whose source dir contains `none.png` has *art* for its empty value (Girl Gang's Clothes "None" is a censored bar), so that value becomes a real trait rather than an empty slot.
+- `--verify N` re-composites real tokens and pixel-diffs them against the official renders; it is what proves the layer order. macOS only (shells out to `sips`).
+- Trait order inside a category is the wire format for `?look=` share codes and `tokens.txt`; `codeHash` guards against drift.

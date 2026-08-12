@@ -1,11 +1,11 @@
-import { CATEGORIES, type CategoryId, type Collection, traitsByCategory } from "@/lib/collections";
+import type { CategoryId, ReadyCollection } from "@/lib/collections";
 
 export function CategoryTabs({
   collection,
   active,
   onSelect,
 }: {
-  collection: Collection;
+  collection: ReadyCollection;
   active: CategoryId;
   onSelect: (category: CategoryId) => void;
 }) {
@@ -15,7 +15,7 @@ export function CategoryTabs({
       aria-label="Trait categories"
       className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
     >
-      {CATEGORIES.map((category) => {
+      {collection.categories.map((category) => {
         const selected = category.id === active;
         return (
           <button
@@ -32,7 +32,7 @@ export function CategoryTabs({
           >
             {category.label}
             <span className="ml-1.5 font-mono text-xs text-ink-muted">
-              {traitsByCategory(collection, category.id).length}
+              {category.traits.length + (category.optional ? 1 : 0)}
             </span>
           </button>
         );
