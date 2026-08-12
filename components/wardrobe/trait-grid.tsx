@@ -1,32 +1,28 @@
-import {
-  type Category,
-  type Collection,
-  type Trait,
-  traitsByCategory,
-} from "@/lib/collections";
-import { TraitThumb } from "@/components/piggy/piggy-art";
+import { traitPercent, type Category, type ReadyCollection, type Trait } from "@/lib/collections";
+import { EmptyThumb, TraitThumb } from "@/components/piggy/piggy-art";
+import { RarityBadge } from "./rarity-badge";
 
 const CELL =
-  "flex flex-col gap-1.5 rounded-xl border p-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+  "flex w-full flex-col gap-1.5 rounded-xl border p-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+
+const selectedClass = (selected: boolean) =>
+  selected
+    ? "border-[var(--accent)] bg-[var(--accent)]/10"
+    : "border-line bg-surface hover:border-ink-muted";
 
 export function TraitGrid({
   collection,
   category,
-  equippedId,
-  baseTrait,
+  equippedSlug,
   onEquip,
   onClear,
 }: {
-  collection: Collection;
+  collection: ReadyCollection;
   category: Category;
-  equippedId: string | null;
-  /** Faint silhouette drawn behind each thumbnail for context. */
-  baseTrait?: Trait;
+  equippedSlug: string | null;
   onEquip: (trait: Trait) => void;
   onClear: () => void;
 }) {
-  const traits = traitsByCategory(collection, category.id);
-
   return (
     <ul className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 lg:grid-cols-5">
       {category.optional && (
@@ -34,39 +30,38 @@ export function TraitGrid({
           <button
             type="button"
             onClick={onClear}
-            aria-pressed={equippedId === null}
-            className={`${CELL} w-full ${
-              equippedId === null
-                ? "border-[var(--accent)] bg-[var(--accent)]/10"
-                : "border-line bg-surface hover:border-ink-muted"
-            }`}
+            aria-pressed={equippedSlug === null}
+            className={`${CELL} ${selectedClass(equippedSlug === null)}`}
           >
-            <span className="flex aspect-square items-center justify-center rounded-lg bg-surface-raised text-2xl text-ink-muted">
-              ✕
+            <span className="block overflow-hidden rounded-lg bg-surface-raised">
+              <EmptyThumb collection={collection} categoryId={category.id} />
             </span>
-            <span className="truncate text-xs font-medium text-ink-muted">None</span>
+            <span className="flex items-center justify-between gap-1">
+              <span className="truncate text-xs font-medium text-ink-muted">None</span>
+              <RarityBadge percent={traitPercent(collection, category.noneCount)} />
+            </span>
           </button>
         </li>
       )}
 
-      {traits.map((trait) => {
-        const selected = trait.id === equippedId;
+      {category.traits.map((trait) => {
+        const selected = trait.slug === equippedSlug;
         return (
           <li key={trait.id}>
             <button
               type="button"
               onClick={() => onEquip(trait)}
               aria-pressed={selected}
-              className={`${CELL} w-full ${
-                selected
-                  ? "border-[var(--accent)] bg-[var(--accent)]/10"
-                  : "border-line bg-surface hover:border-ink-muted"
-              }`}
+              title={trait.name}
+              className={`${CELL} ${selectedClass(selected)}`}
             >
-              <span className="block aspect-square overflow-hidden rounded-lg bg-surface-raised">
-                <TraitThumb trait={trait} base={baseTrait} />
+              <span className="block overflow-hidden rounded-lg bg-surface-raised">
+                <TraitThumb collection={collection} trait={trait} />
               </span>
-              <span className="truncate text-xs font-medium">{trait.name}</span>
+              <span className="flex items-center justify-between gap-1">
+                <span className="truncate text-xs font-medium">{trait.name}</span>
+                <RarityBadge percent={traitPercent(collection, trait.count)} />
+              </span>
             </button>
           </li>
         );

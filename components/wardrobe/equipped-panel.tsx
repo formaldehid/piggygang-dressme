@@ -1,5 +1,14 @@
-import { CATEGORIES, type CategoryId, type Collection } from "@/lib/collections";
-import type { Equipped } from "@/components/piggy/piggy-art";
+import {
+  oneInOdds,
+  rarityPercentile,
+  slotCount,
+  traitOf,
+  traitPercent,
+  type CategoryId,
+  type Equipped,
+  type ReadyCollection,
+} from "@/lib/collections";
+import { RarityBadge } from "./rarity-badge";
 
 export function EquippedPanel({
   collection,
@@ -7,24 +16,25 @@ export function EquippedPanel({
   onSelectCategory,
   onClear,
 }: {
-  collection: Collection;
+  collection: ReadyCollection;
   equipped: Equipped;
   onSelectCategory: (category: CategoryId) => void;
   onClear: (category: CategoryId) => void;
 }) {
+  const percentile = rarityPercentile(collection, equipped);
+
   return (
-    <section
-      aria-label="Equipped traits"
-      className="rounded-card border border-line bg-surface p-4"
-    >
-      <h2 className="mb-3 text-xs font-medium tracking-[0.14em] text-ink-muted uppercase">
-        Equipped
-      </h2>
+    <section aria-label="Equipped traits" className="rounded-card border border-line bg-surface p-4">
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h2 className="text-xs font-medium tracking-[0.14em] text-ink-muted uppercase">Equipped</h2>
+        <span className="font-mono text-xs text-ink-muted">
+          {collection.categories.length} slots
+        </span>
+      </div>
 
       <ul className="flex flex-wrap gap-2">
-        {CATEGORIES.map((category) => {
-          const trait = collection.traits.find((item) => item.id === equipped[category.id]);
-
+        {collection.categories.map((category) => {
+          const trait = traitOf(collection, equipped, category.id);
           return (
             <li key={category.id}>
               <span
@@ -35,10 +45,13 @@ export function EquippedPanel({
                 <button
                   type="button"
                   onClick={() => onSelectCategory(category.id)}
-                  className="rounded-full py-1.5 pr-2 pl-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="flex items-center gap-1.5 rounded-full py-1.5 pr-2 pl-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
                   <span className="text-ink-muted">{category.label}</span>
-                  <span className="ml-1.5 font-medium">{trait ? trait.name : "—"}</span>
+                  <span className="font-medium">{trait ? trait.name : "None"}</span>
+                  <RarityBadge
+                    percent={traitPercent(collection, slotCount(collection, equipped, category))}
+                  />
                 </button>
 
                 {category.optional && trait ? (
@@ -58,6 +71,21 @@ export function EquippedPanel({
           );
         })}
       </ul>
+
+      <div className="mt-4 border-t border-line pt-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-sm">
+            Rarer than <span className="font-semibold text-[var(--accent)]">{percentile}%</span> of{" "}
+            {collection.name}
+          </span>
+          <span className="font-mono text-xs text-ink-muted">
+            {oneInOdds(collection, equipped)}
+          </span>
+        </div>
+        <p className="mt-1 text-[11px] text-ink-muted">
+          Statistical rarity across visual traits — not the official ranking.
+        </p>
+      </div>
     </section>
   );
 }

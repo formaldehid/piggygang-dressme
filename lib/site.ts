@@ -10,9 +10,9 @@ export type Social = {
   icon: "x" | "discord" | "marketplace";
 };
 
-// TODO: point these at the real Piggy Gang accounts.
+/** From the collection metadata in the piggy-image-composer export. */
 export const SOCIALS: Social[] = [
-  { label: "X", href: "#", icon: "x" },
-  { label: "Discord", href: "#", icon: "discord" },
-  { label: "Marketplace", href: "#", icon: "marketplace" },
+  { label: "X", href: "https://twitter.com/PiggySolGang", icon: "x" },
+  { label: "Discord", href: "https://discord.gg/QyUHFsZnuJ", icon: "discord" },
+  { label: "piggygang.com", href: "https://piggygang.com/", icon: "marketplace" },
 ];

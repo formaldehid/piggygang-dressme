@@ -1,43 +1,95 @@
 "use client";
 
-import { type CSSProperties, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  CATEGORIES,
+  decodeLook,
   defaultEquipped,
+  encodeLook,
+  randomLook,
   type CategoryId,
-  type Collection,
+  type Equipped,
+  type ReadyCollection,
   type Trait,
 } from "@/lib/collections";
-import { PiggyArt, type Equipped } from "@/components/piggy/piggy-art";
+import { PiggyArt } from "@/components/piggy/piggy-art";
 import { CategoryTabs } from "./category-tabs";
 import { DownloadButton } from "./download-button";
 import { EquippedPanel } from "./equipped-panel";
+import { LoadToken } from "./load-token";
 import { TraitGrid } from "./trait-grid";
 
-export function WardrobeEditor({ collection }: { collection: Collection }) {
-  const [equipped, setEquipped] = useState<Equipped>(() => defaultEquipped(collection));
-  const [activeId, setActiveId] = useState<CategoryId>(CATEGORIES[0].id);
-  const svgRef = useRef<SVGSVGElement>(null);
+const ACTION =
+  "flex-1 rounded-full border border-line px-3 py-2 text-sm text-ink-muted transition-colors hover:border-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
 
-  const category = CATEGORIES.find((item) => item.id === activeId) ?? CATEGORIES[0];
-  const baseTrait = collection.traits.find((trait) => trait.id === equipped.body);
+export function WardrobeEditor({ collection }: { collection: ReadyCollection }) {
+  // equipped + synced travel together so adopting the shared look is a single
+  // state write rather than two cascading ones.
+  const [{ equipped, synced }, setState] = useState<{ equipped: Equipped; synced: boolean }>(() => ({
+    equipped: defaultEquipped(collection),
+    synced: false,
+  }));
+  const [activeId, setActiveId] = useState<CategoryId>(collection.categories[0].id);
+  const [token, setToken] = useState<{ id: number; rank: number } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const setEquipped = (next: Equipped | ((previous: Equipped) => Equipped)) =>
+    setState((previous) => ({
+      ...previous,
+      equipped: typeof next === "function" ? next(previous.equipped) : next,
+    }));
+
+  const code = useMemo(() => encodeLook(collection, equipped), [collection, equipped]);
+
+  // Adopt a shared look once, after hydration. The URL is a browser-only
+  // source, so this cannot happen during the first render — the server has
+  // already emitted <img src> for the default look and they must match.
+  useEffect(() => {
+    const shared = new URLSearchParams(window.location.search).get("look");
+    const look = shared ? decodeLook(collection, shared) : null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot hydration of browser-only state
+    setState({ equipped: look ?? defaultEquipped(collection), synced: true });
+  }, [collection]);
+
+  // Write it back with replaceState: the route stays static (useSearchParams
+  // would force a Suspense boundary around the whole editor), Back still
+  // leaves the page, and depending on `code` — a primitive — means no loop.
+  useEffect(() => {
+    if (!synced) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("look", code);
+    window.history.replaceState(null, "", url);
+  }, [code, synced]);
+
+  const category = collection.categories.find((item) => item.id === activeId) ?? collection.categories[0];
 
   function equip(trait: Trait) {
+    setToken(null);
     setEquipped((previous) => {
-      const meta = CATEGORIES.find((item) => item.id === trait.category);
-      const alreadyOn = previous[trait.category] === trait.id;
+      const meta = collection.categories.find((item) => item.id === trait.categoryId);
+      const alreadyOn = previous[trait.categoryId] === trait.slug;
+      // Clicking the equipped trait takes it off, but only where the category
+      // is allowed to be empty.
       return {
         ...previous,
-        // Clicking the equipped trait takes it off again, but only where the
-        // category is allowed to be empty.
-        [trait.category]: alreadyOn && meta?.optional ? null : trait.id,
+        [trait.categoryId]: alreadyOn && meta?.optional ? null : trait.slug,
       };
     });
   }
 
   function clear(categoryId: CategoryId) {
+    setToken(null);
     setEquipped((previous) => ({ ...previous, [categoryId]: null }));
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setCopied(false);
+    }
   }
 
   return (
@@ -47,10 +99,17 @@ export function WardrobeEditor({ collection }: { collection: Collection }) {
     >
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-            {collection.name}
-          </h1>
-          <p className="mt-0.5 text-sm text-ink-muted">{collection.tagline}</p>
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{collection.name}</h1>
+          <p className="mt-0.5 text-sm text-ink-muted">
+            {token ? (
+              <>
+                Piggy <span className="font-medium text-ink">#{token.id}</span> — rank {token.rank}{" "}
+                of {collection.supply.toLocaleString("en-US")}
+              </>
+            ) : (
+              collection.tagline
+            )}
+          </p>
         </div>
         <Link
           href="/"
@@ -61,17 +120,46 @@ export function WardrobeEditor({ collection }: { collection: Collection }) {
       </div>
 
       <div className="lg:grid lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start lg:gap-8">
-        <div className="flex flex-col gap-4 lg:sticky lg:top-24">
+        <div className="flex flex-col gap-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pb-2">
           <div className="overflow-hidden rounded-card border border-line bg-surface">
-            <PiggyArt
-              svgRef={svgRef}
-              collection={collection}
-              equipped={equipped}
-              className="aspect-square w-full"
-            />
+            <PiggyArt collection={collection} equipped={equipped} eager className="w-full" />
           </div>
 
-          <DownloadButton svgRef={svgRef} filename={`${collection.slug}.png`} />
+          <DownloadButton collection={collection} equipped={equipped} lookCode={code} />
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className={ACTION}
+              onClick={() => {
+                setToken(null);
+                setEquipped(randomLook(collection));
+              }}
+            >
+              Surprise me
+            </button>
+            <button
+              type="button"
+              className={ACTION}
+              onClick={() => {
+                setToken(null);
+                setEquipped(defaultEquipped(collection));
+              }}
+            >
+              Reset
+            </button>
+            <button type="button" className={ACTION} onClick={copyLink}>
+              {copied ? "Copied" : "Copy link"}
+            </button>
+          </div>
+
+          <LoadToken
+            collection={collection}
+            onLoad={(look, loaded) => {
+              setEquipped(look);
+              setToken(loaded);
+            }}
+          />
 
           <EquippedPanel
             collection={collection}
@@ -86,8 +174,7 @@ export function WardrobeEditor({ collection }: { collection: Collection }) {
           <TraitGrid
             collection={collection}
             category={category}
-            equippedId={equipped[category.id]}
-            baseTrait={baseTrait}
+            equippedSlug={equipped[category.id]}
             onEquip={equip}
             onClear={() => clear(category.id)}
           />
