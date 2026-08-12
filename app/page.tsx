@@ -2,12 +2,15 @@ import { CollectionCard } from "@/components/collection-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { PiggyMark } from "@/components/brand/wordmark";
+import { ConnectButton } from "@/components/wallet/connect-button";
 import { COLLECTIONS } from "@/lib/collections";
 
 export default function Home() {
   return (
     <>
-      <SiteHeader />
+      <SiteHeader>
+        <ConnectButton />
+      </SiteHeader>
 
       <main className="flex-1">
         <section className="mx-auto w-full max-w-6xl px-5 pt-14 pb-12 text-center sm:pt-20">
@@ -17,7 +20,7 @@ export default function Home() {
           </h1>
           <p className="mx-auto mt-4 max-w-md text-base text-ink-muted text-pretty sm:text-lg">
             Pick your collection, layer up the traits and take the look home as a
-            PNG. Free, no wallet needed.
+            PNG. Free — or connect a wallet to dress the piggies you own.
           </p>
         </section>
 

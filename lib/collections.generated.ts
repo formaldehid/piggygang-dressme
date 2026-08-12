@@ -815,6 +815,12 @@ export const GENERATED: Record<string, GeneratedCollection> = {
       "stride": 10,
       "firstId": 1,
       "count": 10000
+    },
+    "mints": {
+      "path": "/piggy/piggy-sol-gang/mints.txt",
+      "width": 44,
+      "firstId": 1,
+      "count": 10000
     }
   },
   "piggy-girl-gang": {
@@ -1705,6 +1711,12 @@ export const GENERATED: Record<string, GeneratedCollection> = {
       "stride": 11,
       "firstId": 1,
       "count": 5000
+    },
+    "mints": {
+      "path": "/piggy/piggy-girl-gang/mints.txt",
+      "width": 44,
+      "firstId": 1,
+      "count": 5000
     }
   },
   "piggy-gang": {
@@ -2538,6 +2550,7 @@ export const GENERATED: Record<string, GeneratedCollection> = {
       "stride": 11,
       "firstId": 1,
       "count": 10000
-    }
+    },
+    "mints": null
   }
 };

@@ -36,6 +36,16 @@ body {
   color: var(--ink);
 }
 
+/* The only overlay in the app is a native <dialog>, which renders in the top
+   layer — so it needs no z-index, but its backdrop needs painting. Matches the
+   sticky header's translucent-canvas treatment. The colour is --canvas spelled
+   out: ::backdrop only began inheriting custom properties recently, and a
+   var() that fails to resolve here means an invisible scrim. */
+::backdrop {
+  background: rgb(11 7 16 / 0.8);
+  backdrop-filter: blur(4px);
+}
+
 /* The editor's category tabs and trait grid scroll horizontally on small
    screens; hide the scrollbar without losing the scrolling itself. */
 @utility no-scrollbar {

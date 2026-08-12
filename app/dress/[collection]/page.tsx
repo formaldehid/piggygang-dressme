@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { COLLECTIONS, getReadyCollection } from "@/lib/collections";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { ConnectButton } from "@/components/wallet/connect-button";
 import { WardrobeEditor } from "@/components/wardrobe/wardrobe-editor";
 
 export function generateStaticParams() {
@@ -28,7 +29,9 @@ export default async function DressPage(props: PageProps<"/dress/[collection]">)
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader>
+        <ConnectButton />
+      </SiteHeader>
       <main className="flex-1">
         <WardrobeEditor collection={collection} />
       </main>

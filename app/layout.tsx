@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { WalletProvider } from "@/components/wallet/wallet-provider";
 import { SITE } from "@/lib/site";
 import "./globals.css";
 
@@ -27,7 +28,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      {/* The provider renders no element of its own — body is a flex column
+          whose children must stay the header, main and footer. */}
+      <body className="min-h-full flex flex-col font-sans">
+        <WalletProvider>{children}</WalletProvider>
+      </body>
     </html>
   );
 }

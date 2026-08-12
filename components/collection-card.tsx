@@ -3,6 +3,7 @@ import Link from "next/link";
 import { decodeLook, defaultEquipped, type Collection } from "@/lib/collections";
 import { PiggyArt } from "@/components/piggy/piggy-art";
 import { PiggyMark } from "@/components/brand/wordmark";
+import { OwnedCount } from "@/components/wallet/owned-count";
 
 export function CollectionCard({ collection }: { collection: Collection }) {
   const accent = { "--accent": collection.accent } as CSSProperties;
@@ -50,8 +51,11 @@ export function CollectionCard({ collection }: { collection: Collection }) {
       <div className="flex flex-1 flex-col gap-1.5 border-t border-line p-4">
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="text-base font-semibold tracking-tight">{collection.name}</h3>
-          <span className="font-mono text-xs text-ink-muted">
-            {collection.supply.toLocaleString("en-US")}
+          <span className="flex items-baseline gap-2">
+            <OwnedCount collection={collection} />
+            <span className="font-mono text-xs text-ink-muted">
+              {collection.supply.toLocaleString("en-US")}
+            </span>
           </span>
         </div>
         <p className="text-sm text-ink-muted">{collection.tagline}</p>
