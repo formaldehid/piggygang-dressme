@@ -5,6 +5,7 @@ export const GENERATED: Record<string, GeneratedCollection> = {
   "piggy-sol-gang": {
     "slug": "piggy-sol-gang",
     "supply": 10000,
+    "canvas": 1080,
     "bodyCategoryId": "body",
     "mannequinBody": "salmon",
     "categories": [
@@ -819,6 +820,7 @@ export const GENERATED: Record<string, GeneratedCollection> = {
   "piggy-girl-gang": {
     "slug": "piggy-girl-gang",
     "supply": 5000,
+    "canvas": 1080,
     "bodyCategoryId": "body",
     "mannequinBody": "salmon",
     "categories": [
@@ -1446,10 +1448,10 @@ export const GENERATED: Record<string, GeneratedCollection> = {
         "optional": true,
         "noneCount": 806,
         "focus": {
-          "x": 0.0219,
-          "y": 0.3135,
-          "w": 0.4822,
-          "h": 0.4822
+          "x": 0.013,
+          "y": 0.3046,
+          "w": 0.5,
+          "h": 0.5
         },
         "traits": [
           {
@@ -1703,6 +1705,839 @@ export const GENERATED: Record<string, GeneratedCollection> = {
       "stride": 11,
       "firstId": 1,
       "count": 5000
+    }
+  },
+  "piggy-gang": {
+    "slug": "piggy-gang",
+    "supply": 10000,
+    "canvas": 2000,
+    "bodyCategoryId": "body",
+    "mannequinBody": "pink",
+    "categories": [
+      {
+        "id": "background",
+        "label": "Background",
+        "metaName": "Background",
+        "dir": "background",
+        "optional": false,
+        "noneCount": 0,
+        "focus": {
+          "x": 0,
+          "y": 0,
+          "w": 1,
+          "h": 1
+        },
+        "traits": [
+          {
+            "name": "Red",
+            "slug": "red",
+            "count": 1486,
+            "ext": "png"
+          },
+          {
+            "name": "Purple",
+            "slug": "purple",
+            "count": 1456,
+            "ext": "png"
+          },
+          {
+            "name": "Yellow",
+            "slug": "yellow",
+            "count": 1436,
+            "ext": "png"
+          },
+          {
+            "name": "Cyan",
+            "slug": "cyan",
+            "count": 1433,
+            "ext": "png"
+          },
+          {
+            "name": "Blue",
+            "slug": "blue",
+            "count": 1418,
+            "ext": "png"
+          },
+          {
+            "name": "Orange",
+            "slug": "orange",
+            "count": 1390,
+            "ext": "png"
+          },
+          {
+            "name": "Green",
+            "slug": "green",
+            "count": 1381,
+            "ext": "png"
+          }
+        ]
+      },
+      {
+        "id": "special",
+        "label": "Special",
+        "metaName": "Earring",
+        "dir": "special",
+        "optional": true,
+        "noneCount": 5639,
+        "focus": {
+          "x": 0,
+          "y": 0.4,
+          "w": 0.55,
+          "h": 0.55
+        },
+        "traits": [
+          {
+            "name": "Mr. Lovo",
+            "slug": "mr-lovo",
+            "count": 1002,
+            "ext": "png"
+          },
+          {
+            "name": "Wingman",
+            "slug": "wingman",
+            "count": 1002,
+            "ext": "png"
+          },
+          {
+            "name": "Smoke",
+            "slug": "smoke",
+            "count": 936,
+            "ext": "png"
+          },
+          {
+            "name": "Angel Wings",
+            "slug": "angel-wings",
+            "count": 810,
+            "ext": "png"
+          },
+          {
+            "name": "Shotgun",
+            "slug": "shotgun",
+            "count": 611,
+            "ext": "png"
+          }
+        ]
+      },
+      {
+        "id": "body",
+        "label": "Skin",
+        "metaName": "Body | Received Mud",
+        "dir": "body",
+        "optional": false,
+        "noneCount": 0,
+        "focus": {
+          "x": 0,
+          "y": 0.0049,
+          "w": 0.9951,
+          "h": 0.9951
+        },
+        "traits": [
+          {
+            "name": "Salmon",
+            "slug": "salmon",
+            "count": 2860,
+            "ext": "png"
+          },
+          {
+            "name": "Pink",
+            "slug": "pink",
+            "count": 1648,
+            "ext": "png"
+          },
+          {
+            "name": "Dino",
+            "slug": "dino",
+            "count": 1609,
+            "ext": "png"
+          },
+          {
+            "name": "Leopard",
+            "slug": "leopard",
+            "count": 1406,
+            "ext": "png"
+          },
+          {
+            "name": "Mud Splash",
+            "slug": "mud-splash",
+            "count": 984,
+            "ext": "png"
+          },
+          {
+            "name": "Boar",
+            "slug": "boar",
+            "count": 589,
+            "ext": "png"
+          },
+          {
+            "name": "Zombie",
+            "slug": "zombie",
+            "count": 468,
+            "ext": "png"
+          },
+          {
+            "name": "Alien",
+            "slug": "alien",
+            "count": 293,
+            "ext": "png"
+          },
+          {
+            "name": "Solana",
+            "slug": "solana",
+            "count": 143,
+            "ext": "png"
+          }
+        ]
+      },
+      {
+        "id": "clothes",
+        "label": "Clothes",
+        "metaName": "Clothes",
+        "dir": "clothes",
+        "optional": true,
+        "noneCount": 653,
+        "focus": {
+          "x": 0,
+          "y": 0,
+          "w": 1,
+          "h": 1
+        },
+        "traits": [
+          {
+            "name": "Singlet",
+            "slug": "singlet",
+            "count": 1438,
+            "ext": "png"
+          },
+          {
+            "name": "Hoodie",
+            "slug": "hoodie",
+            "count": 1361,
+            "ext": "png"
+          },
+          {
+            "name": "Tux",
+            "slug": "tux",
+            "count": 1162,
+            "ext": "png"
+          },
+          {
+            "name": "Tracksuit",
+            "slug": "tracksuit",
+            "count": 832,
+            "ext": "png"
+          },
+          {
+            "name": "Biker Leather Jacket",
+            "slug": "biker-leather-jacket",
+            "count": 821,
+            "ext": "png"
+          },
+          {
+            "name": "Prison Suit",
+            "slug": "prison-suit",
+            "count": 720,
+            "ext": "png"
+          },
+          {
+            "name": "Butcher's Apron",
+            "slug": "butcher-s-apron",
+            "count": 718,
+            "ext": "png"
+          },
+          {
+            "name": "Hawaiian Tee",
+            "slug": "hawaiian-tee",
+            "count": 668,
+            "ext": "png"
+          },
+          {
+            "name": "Bone Necklace",
+            "slug": "bone-necklace",
+            "count": 555,
+            "ext": "png"
+          },
+          {
+            "name": "Pimp Coat",
+            "slug": "pimp-coat",
+            "count": 427,
+            "ext": "png"
+          },
+          {
+            "name": "Cyberpunk Jacket",
+            "slug": "cyberpunk-jacket",
+            "count": 293,
+            "ext": "png"
+          },
+          {
+            "name": "Blanket",
+            "slug": "blanket",
+            "count": 201,
+            "ext": "png"
+          },
+          {
+            "name": "Solana Tee",
+            "slug": "solana-tee",
+            "count": 151,
+            "ext": "png"
+          }
+        ]
+      },
+      {
+        "id": "head",
+        "label": "Headwear",
+        "metaName": "Head",
+        "dir": "head",
+        "optional": true,
+        "noneCount": 581,
+        "focus": {
+          "x": 0.1295,
+          "y": 0,
+          "w": 0.8426,
+          "h": 0.8426
+        },
+        "traits": [
+          {
+            "name": "Beanie",
+            "slug": "beanie",
+            "count": 846,
+            "ext": "png"
+          },
+          {
+            "name": "Chef's Hat",
+            "slug": "chef-s-hat",
+            "count": 749,
+            "ext": "png"
+          },
+          {
+            "name": "Cowboy Hat",
+            "slug": "cowboy-hat",
+            "count": 631,
+            "ext": "png"
+          },
+          {
+            "name": "Cap",
+            "slug": "cap",
+            "count": 575,
+            "ext": "png"
+          },
+          {
+            "name": "Pork Patrol",
+            "slug": "pork-patrol",
+            "count": 561,
+            "ext": "png"
+          },
+          {
+            "name": "Biker Hat",
+            "slug": "biker-hat",
+            "count": 554,
+            "ext": "png"
+          },
+          {
+            "name": "Straw Hat",
+            "slug": "straw-hat",
+            "count": 541,
+            "ext": "png"
+          },
+          {
+            "name": "Trucker Hat",
+            "slug": "trucker-hat",
+            "count": 531,
+            "ext": "png"
+          },
+          {
+            "name": "Dreads",
+            "slug": "dreads",
+            "count": 528,
+            "ext": "png"
+          },
+          {
+            "name": "Durag",
+            "slug": "durag",
+            "count": 525,
+            "ext": "png"
+          },
+          {
+            "name": "Pirate Hat",
+            "slug": "pirate-hat",
+            "count": 496,
+            "ext": "png"
+          },
+          {
+            "name": "Mohawk",
+            "slug": "mohawk",
+            "count": 470,
+            "ext": "png"
+          },
+          {
+            "name": "Pimp Hat",
+            "slug": "pimp-hat",
+            "count": 443,
+            "ext": "png"
+          },
+          {
+            "name": "Robohawk",
+            "slug": "robohawk",
+            "count": 348,
+            "ext": "png"
+          },
+          {
+            "name": "Fly Halo",
+            "slug": "fly-halo",
+            "count": 329,
+            "ext": "png"
+          },
+          {
+            "name": "Bucket Hat",
+            "slug": "bucket-hat",
+            "count": 232,
+            "ext": "png"
+          },
+          {
+            "name": "Medusa",
+            "slug": "medusa",
+            "count": 231,
+            "ext": "png"
+          },
+          {
+            "name": "Hawk's Nest",
+            "slug": "hawk-s-nest",
+            "count": 223,
+            "ext": "png"
+          },
+          {
+            "name": "Propeller Hat",
+            "slug": "propeller-hat",
+            "count": 214,
+            "ext": "png"
+          },
+          {
+            "name": "Halo",
+            "slug": "halo",
+            "count": 122,
+            "ext": "png"
+          },
+          {
+            "name": "Unicorn",
+            "slug": "unicorn",
+            "count": 110,
+            "ext": "png"
+          },
+          {
+            "name": "Ice Cream",
+            "slug": "ice-cream",
+            "count": 109,
+            "ext": "png"
+          },
+          {
+            "name": "Royal Crown",
+            "slug": "royal-crown",
+            "count": 51,
+            "ext": "png"
+          }
+        ]
+      },
+      {
+        "id": "eyes",
+        "label": "Eyes",
+        "metaName": "Eyes",
+        "dir": "eyes",
+        "optional": false,
+        "noneCount": 0,
+        "focus": {
+          "x": 0.2163,
+          "y": 0.1477,
+          "w": 0.7837,
+          "h": 0.7837
+        },
+        "traits": [
+          {
+            "name": "Open",
+            "slug": "open",
+            "count": 1176,
+            "ext": "png"
+          },
+          {
+            "name": "Scar",
+            "slug": "scar",
+            "count": 976,
+            "ext": "png"
+          },
+          {
+            "name": "Pimp Glasses",
+            "slug": "pimp-glasses",
+            "count": 968,
+            "ext": "png"
+          },
+          {
+            "name": "Tear Drop Tattoos",
+            "slug": "tear-drop-tattoos",
+            "count": 758,
+            "ext": "png"
+          },
+          {
+            "name": "High",
+            "slug": "high",
+            "count": 712,
+            "ext": "png"
+          },
+          {
+            "name": "Wink",
+            "slug": "wink",
+            "count": 702,
+            "ext": "png"
+          },
+          {
+            "name": "Viper Glasses",
+            "slug": "viper-glasses",
+            "count": 690,
+            "ext": "png"
+          },
+          {
+            "name": "Focused",
+            "slug": "focused",
+            "count": 680,
+            "ext": "png"
+          },
+          {
+            "name": "Coin",
+            "slug": "coin",
+            "count": 668,
+            "ext": "png"
+          },
+          {
+            "name": "White Glow",
+            "slug": "white-glow",
+            "count": 575,
+            "ext": "png"
+          },
+          {
+            "name": "Terminator",
+            "slug": "terminator",
+            "count": 489,
+            "ext": "png"
+          },
+          {
+            "name": "Urban Frames Glasses",
+            "slug": "urban-frames-glasses",
+            "count": 486,
+            "ext": "png"
+          },
+          {
+            "name": "Pork Patrol",
+            "slug": "pork-patrol",
+            "count": 478,
+            "ext": "png"
+          },
+          {
+            "name": "Dollar Sign Glasses",
+            "slug": "dollar-sign-glasses",
+            "count": 246,
+            "ext": "png"
+          },
+          {
+            "name": "Oinkulus",
+            "slug": "oinkulus",
+            "count": 245,
+            "ext": "png"
+          },
+          {
+            "name": "Laser",
+            "slug": "laser",
+            "count": 151,
+            "ext": "png"
+          }
+        ]
+      },
+      {
+        "id": "earring",
+        "label": "Earring",
+        "metaName": "Earring",
+        "dir": "earring",
+        "optional": true,
+        "noneCount": 6741,
+        "focus": {
+          "x": 0,
+          "y": 0.2193,
+          "w": 0.5,
+          "h": 0.5
+        },
+        "traits": [
+          {
+            "name": "Diamond",
+            "slug": "diamond",
+            "count": 1021,
+            "ext": "png"
+          },
+          {
+            "name": "Ear Tag",
+            "slug": "ear-tag",
+            "count": 999,
+            "ext": "png"
+          },
+          {
+            "name": "Gold Ring",
+            "slug": "gold-ring",
+            "count": 604,
+            "ext": "png"
+          },
+          {
+            "name": "Pink Diamond",
+            "slug": "pink-diamond",
+            "count": 435,
+            "ext": "png"
+          },
+          {
+            "name": "Solana",
+            "slug": "solana",
+            "count": 200,
+            "ext": "png"
+          }
+        ]
+      },
+      {
+        "id": "mouth",
+        "label": "Mouth",
+        "metaName": "Mouth",
+        "dir": "mouth",
+        "optional": false,
+        "noneCount": 0,
+        "focus": {
+          "x": 0.0979,
+          "y": 0.0979,
+          "w": 0.9021,
+          "h": 0.9021
+        },
+        "traits": [
+          {
+            "name": "Smiling",
+            "slug": "smiling",
+            "count": 1506,
+            "ext": "png"
+          },
+          {
+            "name": "Neutral",
+            "slug": "neutral",
+            "count": 1501,
+            "ext": "png"
+          },
+          {
+            "name": "Nose Ring",
+            "slug": "nose-ring",
+            "count": 1096,
+            "ext": "png"
+          },
+          {
+            "name": "Muzzle",
+            "slug": "muzzle",
+            "count": 1035,
+            "ext": "png"
+          },
+          {
+            "name": "Cigarette",
+            "slug": "cigarette",
+            "count": 870,
+            "ext": "png"
+          },
+          {
+            "name": "Blunt",
+            "slug": "blunt",
+            "count": 846,
+            "ext": "png"
+          },
+          {
+            "name": "Apple",
+            "slug": "apple",
+            "count": 831,
+            "ext": "png"
+          },
+          {
+            "name": "Coin",
+            "slug": "coin",
+            "count": 683,
+            "ext": "png"
+          },
+          {
+            "name": "Butcher's Knife",
+            "slug": "butcher-s-knife",
+            "count": 585,
+            "ext": "png"
+          },
+          {
+            "name": "Diamond Grills",
+            "slug": "diamond-grills",
+            "count": 448,
+            "ext": "png"
+          },
+          {
+            "name": "Pipe",
+            "slug": "pipe",
+            "count": 433,
+            "ext": "png"
+          },
+          {
+            "name": "Golden Teeth",
+            "slug": "golden-teeth",
+            "count": 166,
+            "ext": "png"
+          }
+        ]
+      }
+    ],
+    "stack": [
+      {
+        "kind": "category",
+        "categoryId": "background"
+      },
+      {
+        "kind": "category",
+        "categoryId": "special"
+      },
+      {
+        "kind": "category",
+        "categoryId": "body"
+      },
+      {
+        "kind": "category",
+        "categoryId": "clothes"
+      },
+      {
+        "kind": "category",
+        "categoryId": "head"
+      },
+      {
+        "kind": "category",
+        "categoryId": "eyes"
+      },
+      {
+        "kind": "category",
+        "categoryId": "earring"
+      },
+      {
+        "kind": "category",
+        "categoryId": "mouth"
+      }
+    ],
+    "codeOrder": [
+      "background",
+      "body",
+      "clothes",
+      "earring",
+      "eyes",
+      "head",
+      "mouth",
+      "special"
+    ],
+    "codeHash": "f4bbbfabaa6d",
+    "defaultLook": "00100100",
+    "heroLook": "58D47JB0",
+    "rarityCurve": [
+      5.641,
+      6.002,
+      6.106,
+      6.184,
+      6.245,
+      6.295,
+      6.342,
+      6.4,
+      6.45,
+      6.492,
+      6.533,
+      6.571,
+      6.609,
+      6.648,
+      6.678,
+      6.71,
+      6.739,
+      6.761,
+      6.788,
+      6.816,
+      6.84,
+      6.867,
+      6.888,
+      6.905,
+      6.924,
+      6.947,
+      6.968,
+      6.989,
+      7.009,
+      7.028,
+      7.047,
+      7.064,
+      7.078,
+      7.095,
+      7.112,
+      7.126,
+      7.141,
+      7.155,
+      7.171,
+      7.188,
+      7.203,
+      7.217,
+      7.232,
+      7.244,
+      7.258,
+      7.275,
+      7.29,
+      7.304,
+      7.319,
+      7.331,
+      7.346,
+      7.361,
+      7.377,
+      7.391,
+      7.408,
+      7.42,
+      7.433,
+      7.448,
+      7.465,
+      7.481,
+      7.493,
+      7.508,
+      7.523,
+      7.54,
+      7.556,
+      7.572,
+      7.589,
+      7.604,
+      7.622,
+      7.638,
+      7.657,
+      7.674,
+      7.694,
+      7.717,
+      7.734,
+      7.753,
+      7.775,
+      7.795,
+      7.814,
+      7.836,
+      7.863,
+      7.889,
+      7.912,
+      7.934,
+      7.959,
+      7.991,
+      8.017,
+      8.051,
+      8.082,
+      8.113,
+      8.147,
+      8.185,
+      8.223,
+      8.267,
+      8.316,
+      8.379,
+      8.466,
+      8.565,
+      8.666,
+      8.848,
+      10.75
+    ],
+    "tokens": {
+      "path": "/piggy/piggy-gang/tokens.txt",
+      "stride": 11,
+      "firstId": 1,
+      "count": 10000
     }
   }
 };

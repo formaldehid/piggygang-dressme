@@ -22,7 +22,10 @@ export type GeneratedTrait = {
 export type GeneratedCategory = {
   id: CategoryId;
   label: string;
-  /** Trait name in the source metadata, e.g. "Head". */
+  /**
+   * Category name in the importer config. Usually the source metadata attribute
+   * ("Head"); Piggy Gang's "Special" is carved out of the Earring attribute.
+   */
   metaName: string;
   /** Path segment under public/piggy/<slug>/<tier>/. */
   dir: string;
@@ -45,6 +48,11 @@ export type LayerStep =
 export type GeneratedCollection = {
   slug: string;
   supply: number;
+  /**
+   * Native pixel size of one layer PNG, and therefore of an exported look.
+   * Per-collection: the minted art is 1080, Piggy Gang's redraw is 2000.
+   */
+  canvas: number;
   bodyCategoryId: CategoryId;
   /** Body trait slug used as the mannequin behind trait thumbnails. */
   mannequinBody: string;

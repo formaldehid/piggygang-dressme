@@ -22,6 +22,8 @@ export type ReadyCollection = {
   tagline: string;
   accent: string;
   supply: number;
+  /** Native pixel size of one layer, and of an exported look. */
+  canvas: number;
   /** Tab order — presentation, deliberately not the paint order. */
   categories: Category[];
   bodyCategoryId: CategoryId;
@@ -66,17 +68,17 @@ const PRESENTATION: Record<
     accent: "#ff8ec4",
     tabOrder: ["body", "eyes", "mouth", "clothes", "hair", "hats", "earring", "background"],
   },
+  "piggy-gang": {
+    name: "Piggy Gang",
+    tagline: "Same ten thousand piggies. Meaner art.",
+    // Deliberately not #ffd166: that is the --gold token the Mythic rarity
+    // badge uses, and an accent indistinguishable from a badge reads as a bug.
+    accent: "#3ddad7",
+    tabOrder: ["body", "eyes", "mouth", "clothes", "head", "earring", "special", "background"],
+  },
 };
 
-const COMING_SOON: ComingSoonCollection[] = [
-  {
-    status: "coming-soon",
-    slug: "piggy-gang",
-    name: "Piggy Gang",
-    tagline: "Trait art on the way.",
-    accent: "#ffd166",
-  },
-];
+const COMING_SOON: ComingSoonCollection[] = [];
 
 function hydrate(slug: string): ReadyCollection {
   const generated = GENERATED[slug];
@@ -91,7 +93,19 @@ function hydrate(slug: string): ReadyCollection {
     })),
   }));
 
+  // indexOf returns -1 for a category the tab order forgot, which sorts it
+  // *ahead* of everything and silently makes it the opening tab. Fail the build
+  // instead — hydrate runs at module load, so this surfaces in `next build`.
   const order = presentation.tabOrder;
+  const ids = categories.map((category) => category.id);
+  const missing = ids.filter((id) => !order.includes(id));
+  const unknown = order.filter((id) => !ids.includes(id));
+  if (missing.length || unknown.length) {
+    throw new Error(
+      `${slug}: tabOrder must name every generated category exactly once — `
+        + `missing [${missing}], unknown [${unknown}]`,
+    );
+  }
   categories.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
 
   return {
@@ -101,6 +115,7 @@ function hydrate(slug: string): ReadyCollection {
     tagline: presentation.tagline,
     accent: presentation.accent,
     supply: generated.supply,
+    canvas: generated.canvas,
     categories,
     bodyCategoryId: generated.bodyCategoryId,
     mannequinBody: generated.mannequinBody,

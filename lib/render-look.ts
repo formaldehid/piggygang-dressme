@@ -1,8 +1,5 @@
 import { layerSources, type Equipped, type ReadyCollection } from "./collections";
 
-/** Native size of the source art — the export matches the official renders. */
-export const EXPORT_SIZE = 1080;
-
 function loadDecoded(src: string): Promise<HTMLImageElement> {
   const image = new Image();
   image.src = src;
@@ -38,9 +35,11 @@ export async function renderLook(
   // z-order comes from the stack rather than from who downloaded first.
   const images = await Promise.all(layers.map((layer) => loadDecoded(layer.src)));
 
+  // The collection's native size, so `drawImage` at the origin needs no scaling
+  // — and so a 2000px collection is not silently cropped to a 1080 frame.
   const canvas = document.createElement("canvas");
-  canvas.width = EXPORT_SIZE;
-  canvas.height = EXPORT_SIZE;
+  canvas.width = collection.canvas;
+  canvas.height = collection.canvas;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("canvas is unavailable");
 
