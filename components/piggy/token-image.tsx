@@ -26,12 +26,13 @@ export function TokenImage({
   alt,
 }: {
   collection: ReadyCollection;
-  mint: string;
+  /** `null` for a piggy with no minted render to fetch — a swapped Core asset. */
+  mint: string | null;
   equipped: Equipped;
   alt: string;
 }) {
   const [failed, setFailed] = useState(false);
-  const src = RENDER_BASE ? `${RENDER_BASE}/${collection.slug}/${mint}.png` : "";
+  const src = RENDER_BASE && mint ? `${RENDER_BASE}/${collection.slug}/${mint}.png` : "";
 
   if (!src || failed) {
     return <PiggyArt collection={collection} equipped={equipped} tier="thumb" />;

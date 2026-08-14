@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Equipped, ReadyCollection } from "@/lib/collections";
+import type { Equipped, ReadyCollection, WalletSource } from "@/lib/collections";
 import { loadMintIndex } from "@/lib/mint-index";
 import { loadTokenIndex } from "@/lib/token-index";
 import { useWallet } from "@/components/wallet/wallet-provider";
@@ -15,7 +15,7 @@ const selectedClass = (selected: boolean) =>
     ? "border-[var(--accent)] bg-[var(--accent)]/10"
     : "border-line bg-surface hover:border-ink-muted";
 
-type Owned = { id: number; rank: number; mint: string; equipped: Equipped };
+type Owned = { id: number; rank: number; mint: string | null; equipped: Equipped };
 
 /**
  * Tiles rendered before "Show more". Without a render bucket configured each
@@ -27,60 +27,102 @@ const PAGE = 24;
 /**
  * The piggies this holder owns in this collection.
  *
- * No RPC call of its own: the provider fetches the wallet's mints once, and
- * deciding which of them belong here is a local intersection against the
- * committed mint index. Switching collections costs nothing on the network.
+ * No RPC call of its own: the provider reads the chain once per address, and
+ * deciding what belongs here is local — an intersection against the committed
+ * mint index, or, for a Core-sourced collection, a walk of the already
+ * validated held token ids. Switching collections costs nothing on the network.
  */
 export function MyPiggies({
   collection,
-  mints,
+  source,
   selectedId,
   onLoad,
 }: {
   collection: ReadyCollection;
-  /** Passed in so the caller proves the collection has a mint index. */
-  mints: NonNullable<ReadyCollection["mints"]>;
+  /** Passed in so the caller proves the collection has an ownership source. */
+  source: WalletSource;
   selectedId: number | null;
   onLoad: (equipped: Equipped, token: { id: number; rank: number }) => void;
 }) {
-  const { address, ownedMints, reading, error: walletError, openModal, refresh } = useWallet();
+  const {
+    address,
+    ownedMints,
+    ownedCore,
+    reading: mintsReading,
+    coreReading,
+    error: walletError,
+    coreError,
+    openModal,
+    refresh,
+  } = useWallet();
 
-  // Held against the mints it was resolved from, so a new read derives back to
+  // What this panel derives from — the SPL mint list or the Core holdings
+  // record. Each is one fresh reference per provider read, which is what the
+  // resolved state below is keyed on.
+  const read: unknown = source.kind === "mints" ? ownedMints : ownedCore;
+  const reading = source.kind === "mints" ? mintsReading : coreReading;
+  const unidentified = source.kind === "core" ? (ownedCore?.[source.collection]?.skipped ?? 0) : 0;
+
+  // Held against the read it was resolved from, so a new read derives back to
   // "not resolved yet" without a synchronous reset.
-  const [resolved, setResolved] = useState<{ source: string[]; rows: Owned[] | null } | null>(null);
+  const [resolved, setResolved] = useState<{ source: unknown; rows: Owned[] | null } | null>(null);
   const [limit, setLimit] = useState(PAGE);
-  const current = resolved?.source === ownedMints ? resolved : null;
+  const current = read && resolved?.source === read ? resolved : null;
   const owned = current?.rows ?? null;
   const shown = useMemo(() => owned?.slice(0, limit) ?? null, [owned, limit]);
 
   // The provider owns connection and RPC failures, but this panel is where a
-  // holder is looking when the read fails, so it echoes them rather than
-  // sitting on an empty grid.
+  // holder is looking when a read fails, so it echoes them rather than sitting
+  // on an empty grid. An all-unidentified wallet is a failure too: showing it
+  // as "no piggies" would turn a naming drift into a convincing lie.
   const failure = current && !current.rows
     ? "Could not load the collection index."
-    : (ownedMints ? null : walletError);
+    : !read
+      ? (source.kind === "mints" ? walletError : coreError)
+      : owned?.length === 0 && unidentified > 0
+        ? `This wallet's ${collection.name} assets could not be identified.`
+        : null;
 
   useEffect(() => {
-    if (!ownedMints) return;
     let live = true;
-    Promise.all([loadTokenIndex(collection), loadMintIndex(collection, mints)])
-      .then(([index, mintIndex]) => {
-        if (!live) return;
-        const rows: Owned[] = [];
-        for (const mint of ownedMints) {
-          const id = mintIndex.get(mint);
-          if (id === undefined) continue;
-          const look = index.lookAt(id);
-          if (look) rows.push({ id, rank: look.rank, mint, equipped: look.equipped });
-        }
-        rows.sort((a, b) => a.id - b.id);
-        setResolved({ source: ownedMints, rows });
-      })
-      .catch(() => live && setResolved({ source: ownedMints, rows: null }));
+    if (source.kind === "mints") {
+      if (!ownedMints) return;
+      Promise.all([loadTokenIndex(collection), loadMintIndex(collection, source)])
+        .then(([index, mintIndex]) => {
+          if (!live) return;
+          const rows: Owned[] = [];
+          for (const mint of ownedMints) {
+            const id = mintIndex.get(mint);
+            if (id === undefined) continue;
+            const look = index.lookAt(id);
+            if (look) rows.push({ id, rank: look.rank, mint, equipped: look.equipped });
+          }
+          rows.sort((a, b) => a.id - b.id);
+          setResolved({ source: ownedMints, rows });
+        })
+        .catch(() => live && setResolved({ source: ownedMints, rows: null }));
+    } else {
+      if (!ownedCore) return;
+      // Ids arrive validated and deduplicated from the provider, so every one
+      // resolves in the token index; no mint index exists or is needed.
+      const held = ownedCore[source.collection]?.holdings ?? [];
+      loadTokenIndex(collection)
+        .then((index) => {
+          if (!live) return;
+          const rows: Owned[] = [];
+          for (const { id } of held) {
+            const look = index.lookAt(id);
+            if (look) rows.push({ id, rank: look.rank, mint: null, equipped: look.equipped });
+          }
+          rows.sort((a, b) => a.id - b.id);
+          setResolved({ source: ownedCore, rows });
+        })
+        .catch(() => live && setResolved({ source: ownedCore, rows: null }));
+    }
     return () => {
       live = false;
     };
-  }, [collection, mints, ownedMints]);
+  }, [collection, source, ownedMints, ownedCore]);
 
   return (
     <section aria-label="My piggies" className="rounded-card border border-line bg-surface p-4">
@@ -108,10 +150,22 @@ export function MyPiggies({
             <p className="text-xs text-ink-muted">Nothing read from this wallet yet.</p>
           )}
 
-          {!reading && owned?.length === 0 && (
+          {!reading && owned?.length === 0 && !failure && (
             <p className="text-xs text-ink-muted">
-              No {collection.name} piggies in this wallet. Anything listed for sale or staked is
-              held elsewhere and will not show up here.
+              {source.kind === "core" ? (
+                // Naming the sibling collection couples the copy to it, but the
+                // copy is inherently about the swap relationship between the two.
+                <>
+                  No {collection.name} piggies in this wallet. Anything listed for sale or staked
+                  is held elsewhere and will not show up here, and piggies not yet swapped to the
+                  new art appear under Piggy SOL Gang.
+                </>
+              ) : (
+                <>
+                  No {collection.name} piggies in this wallet. Anything listed for sale or staked
+                  is held elsewhere and will not show up here.
+                </>
+              )}
             </p>
           )}
 
@@ -120,7 +174,7 @@ export function MyPiggies({
               {shown.map((piggy) => {
                 const selected = piggy.id === selectedId;
                 return (
-                  <li key={piggy.mint}>
+                  <li key={piggy.id}>
                     <button
                       type="button"
                       onClick={() => onLoad(piggy.equipped, { id: piggy.id, rank: piggy.rank })}
@@ -142,6 +196,12 @@ export function MyPiggies({
                 );
               })}
             </ul>
+          )}
+
+          {!reading && shown && shown.length > 0 && unidentified > 0 && (
+            <p className="mt-2 text-xs text-ink-muted">
+              {unidentified} held asset{unidentified === 1 ? "" : "s"} could not be identified.
+            </p>
           )}
 
           <div className="mt-2 flex gap-2">

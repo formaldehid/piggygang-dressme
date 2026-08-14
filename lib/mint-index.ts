@@ -1,6 +1,6 @@
-import type { ReadyCollection } from "./collections";
+import type { MintsSource, ReadyCollection } from "./collections";
 
-export type Mints = NonNullable<ReadyCollection["mints"]>;
+export type Mints = MintsSource;
 
 /** Mint address to token id. */
 export type MintIndex = Map<string, number>;

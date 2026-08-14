@@ -166,10 +166,10 @@ export function WardrobeEditor({ collection }: { collection: ReadyCollection }) 
             </button>
           </div>
 
-          {collection.mints && (
+          {collection.wallet && (
             <MyPiggies
               collection={collection}
-              mints={collection.mints}
+              source={collection.wallet}
               selectedId={token?.id ?? null}
               onLoad={(look, loaded) => {
                 setEquipped(look);

@@ -2,10 +2,12 @@ import { GENERATED } from "./collections.generated";
 import type {
   CategoryId,
   GeneratedCategory,
+  GeneratedCollection,
   GeneratedTrait,
   LayerStep,
   TraitId,
 } from "./collection-types";
+import type { CoreQuery } from "./solana-rpc";
 
 export type { CategoryId, LayerStep, Rect, TraitId } from "./collection-types";
 
@@ -14,6 +16,19 @@ export type Category = Omit<GeneratedCategory, "traits"> & { traits: Trait[] };
 
 /** Equipped trait **slug** per category; `null` means the slot is empty. */
 export type Equipped = Record<CategoryId, string | null>;
+
+/** SPL source: intersect the wallet's mints with the committed mints.txt. */
+export type MintsSource = { kind: "mints" } & NonNullable<GeneratedCollection["mints"]>;
+
+/**
+ * Metaplex Core source: ask DAS which assets of `collection` the wallet holds.
+ * An asset's on-chain name "#N" IS the token id into tokens.txt — the endpoint
+ * is trusted for which ids are held, never for what they are.
+ */
+export type CoreSource = { kind: "core"; collection: string };
+
+/** Exactly one per collection — hydrate() fails the build if both inputs exist. */
+export type WalletSource = MintsSource | CoreSource;
 
 export type ReadyCollection = {
   status: "ready";
@@ -35,8 +50,8 @@ export type ReadyCollection = {
   heroLook: string;
   rarityCurve: number[];
   tokens: { path: string; stride: number; firstId: number; count: number };
-  /** `null` disables the wallet picker for this collection. */
-  mints: { path: string; width: number; firstId: number; count: number } | null;
+  /** How a connected wallet's holdings resolve here; `null` disables the wallet UI. */
+  wallet: WalletSource | null;
 };
 
 export type ComingSoonCollection = {
@@ -56,7 +71,14 @@ export type Collection = ReadyCollection | ComingSoonCollection;
  */
 const PRESENTATION: Record<
   string,
-  { name: string; tagline: string; accent: string; tabOrder: CategoryId[] }
+  {
+    name: string;
+    tagline: string;
+    accent: string;
+    tabOrder: CategoryId[];
+    /** Metaplex Core collection whose assets are this collection's swapped tokens. */
+    core?: string;
+  }
 > = {
   "piggy-sol-gang": {
     name: "Piggy SOL Gang",
@@ -77,6 +99,10 @@ const PRESENTATION: Record<
     // badge uses, and an accent indistinguishable from a badge reads as a bug.
     accent: "#3ddad7",
     tabOrder: ["body", "eyes", "mouth", "clothes", "head", "earring", "special", "background"],
+    // On-chain CollectionV1 "Piggy Gang". Swapping burns the SOL Gang piggy and
+    // mints a Core asset named "#N" — the same token id tokens.txt already keys,
+    // which is why a live lookup can still resolve to committed trait data.
+    core: "J3nHgSDJj6CPj2ypuDWNuvuiYii965RcSmFAPQVDWA18",
   },
 };
 
@@ -110,6 +136,18 @@ function hydrate(slug: string): ReadyCollection {
   }
   categories.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
 
+  // A collection resolves wallet holdings from exactly one source. The two
+  // inputs live in different layers (generated mints, hand-authored core), so
+  // the type cannot forbid both — fail the build here instead, like tabOrder.
+  if (generated.mints && presentation.core) {
+    throw new Error(`${slug}: declares both a mint index and a Core collection`);
+  }
+  const wallet: WalletSource | null = generated.mints
+    ? { kind: "mints", ...generated.mints }
+    : presentation.core
+      ? { kind: "core", collection: presentation.core }
+      : null;
+
   return {
     status: "ready",
     slug,
@@ -128,7 +166,7 @@ function hydrate(slug: string): ReadyCollection {
     heroLook: generated.heroLook,
     rarityCurve: generated.rarityCurve,
     tokens: generated.tokens,
-    mints: generated.mints,
+    wallet,
   };
 }
 
@@ -145,6 +183,25 @@ export function getCollection(slug: string): Collection | undefined {
 /** Only collections that actually have art — used by routing and metadata. */
 export function getReadyCollection(slug: string): ReadyCollection | undefined {
   return READY.find((collection) => collection.slug === slug);
+}
+
+/**
+ * Every Core collection any ready collection resolves wallets against, with
+ * the id range its asset names must land in. The wallet provider reads this
+ * once at module load to know which DAS queries a connected address needs.
+ */
+export function coreQueries(): CoreQuery[] {
+  const seen = new Map<string, CoreQuery>();
+  for (const collection of READY) {
+    if (collection.wallet?.kind === "core" && !seen.has(collection.wallet.collection)) {
+      seen.set(collection.wallet.collection, {
+        collection: collection.wallet.collection,
+        firstId: collection.tokens.firstId,
+        count: collection.tokens.count,
+      });
+    }
+  }
+  return [...seen.values()];
 }
 
 export function categoryOf(collection: ReadyCollection, id: CategoryId): Category {

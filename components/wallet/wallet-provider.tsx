@@ -15,7 +15,13 @@ import {
   readOverride,
   writeOverride,
 } from "@/lib/rpc-endpoint";
-import { getOwnedMints } from "@/lib/solana-rpc";
+import { coreQueries } from "@/lib/collections";
+import {
+  getCoreAssets,
+  getOwnedMints,
+  isDasUnsupported,
+  type CoreHoldings,
+} from "@/lib/solana-rpc";
 import {
   connect as connectWallet,
   disconnect as disconnectWallet,
@@ -30,9 +36,11 @@ import { WalletModal } from "./wallet-modal";
  * Everything wallet-shaped, held once for the whole app so the navbar, the
  * landing cards and the editor all read the same connection.
  *
- * The mints a wallet holds are fetched **once per address**, not per
- * collection: `getTokenAccountsByOwner` returns the whole wallet in one call,
- * and deciding which of those are piggies is a local intersection against each
+ * The chain is read **once per address**, not per collection, in two
+ * independent calls: `getTokenAccountsByOwner` returns every SPL mint the
+ * wallet holds in one go, and one DAS `searchAssets` per Core-sourced
+ * collection (currently Piggy Gang's) returns its swapped piggies. Deciding
+ * which SPL mints are piggies is a local intersection against each
  * collection's committed mint index. Consumers therefore never touch the RPC.
  */
 type WalletState = {
@@ -47,6 +55,11 @@ type WalletState = {
   ownedMints: string[] | null;
   reading: boolean;
   error: string | null;
+  /** Core holdings per Core collection address, or null before a successful read. */
+  ownedCore: Record<string, CoreHoldings> | null;
+  coreReading: boolean;
+  /** The Core read's failure, held apart: the SPL read can succeed while this fails. */
+  coreError: string | null;
   modalOpen: boolean;
   openModal: () => void;
   closeModal: () => void;
@@ -57,6 +70,9 @@ type WalletState = {
 };
 
 const WalletContext = createContext<WalletState | null>(null);
+
+// Which DAS reads a connected address needs is config, not state.
+const CORE = coreQueries();
 
 export function useWallet(): WalletState {
   const state = useContext(WalletContext);
@@ -86,6 +102,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const reading = key !== null && current === null;
   const error = connectionError ?? current?.error ?? null;
 
+  // The Core read, keyed exactly like the SPL one but held apart: a hung or
+  // failed DAS endpoint must not blank the mint-indexed collections.
+  const [coreRead, setCoreRead] = useState<{
+    key: string;
+    assets: Record<string, CoreHoldings> | null;
+    error: string | null;
+  } | null>(null);
+  const currentCore = coreRead?.key === key ? coreRead : null;
+  const ownedCore = currentCore?.assets ?? null;
+  // The CORE.length guard keeps a build with no Core collections from deriving
+  // "reading" forever — this read simply never happens there.
+  const coreReading = CORE.length > 0 && key !== null && currentCore === null;
+  const coreError = currentCore?.error ?? null;
+
   // Wallets register asynchronously and localStorage is browser-only, so both
   // are read after hydration rather than during render.
   useEffect(() => {
@@ -96,7 +126,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     return onWalletsChange(setWallets);
   }, []);
 
-  // The one RPC call. Re-runs when the address, the endpoint or an explicit
+  // The SPL RPC call. Re-runs when the address, the endpoint or an explicit
   // refresh changes — never when the visitor moves between collections.
   useEffect(() => {
     if (!key || !address || !endpoint) return;
@@ -110,6 +140,37 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       });
     return () => {
       live = false;
+    };
+  }, [key, address, endpoint]);
+
+  // The Core RPC call, on the same key so one refresh re-runs both. This is
+  // the only multi-request read in the app, so it also aborts its in-flight
+  // pagination when the address or endpoint changes mid-read; the aborted
+  // rejection lands in the catch, where the dead `live` flag swallows it.
+  useEffect(() => {
+    if (!key || !address || !endpoint || CORE.length === 0) return;
+    let live = true;
+    const controller = new AbortController();
+    Promise.all(
+      CORE.map(async (query) =>
+        [query.collection, await getCoreAssets(endpoint, address, query, controller.signal)] as const,
+      ),
+    )
+      .then((entries) => live && setCoreRead({ key, assets: Object.fromEntries(entries), error: null }))
+      .catch((cause: unknown) => {
+        if (!live) return;
+        const message = isDasUnsupported(cause)
+          ? endpoint !== DEFAULT_ENDPOINT
+            ? "Your RPC endpoint does not support the DAS API that listing Piggy Gang needs. The built-in endpoint does — clear the override in the wallet dialog to use it."
+            : "The RPC endpoint could not list Core assets (no DAS support). Try again later."
+          : cause instanceof Error
+            ? cause.message
+            : "Could not read the wallet's Core assets.";
+        setCoreRead({ key, assets: null, error: message });
+      });
+    return () => {
+      live = false;
+      controller.abort();
     };
   }, [key, address, endpoint]);
 
@@ -166,6 +227,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       ownedMints,
       reading,
       error,
+      ownedCore,
+      coreReading,
+      coreError,
       modalOpen,
       openModal: () => setModalOpen(true),
       closeModal: () => setModalOpen(false),
@@ -174,7 +238,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       saveEndpoint,
       refresh: () => setNonce((previous) => previous + 1),
     }),
-    [wallets, wallet, address, endpoint, override, ownedMints, reading, error, modalOpen, connect, disconnect, saveEndpoint],
+    [wallets, wallet, address, endpoint, override, ownedMints, reading, error, ownedCore, coreReading, coreError, modalOpen, connect, disconnect, saveEndpoint],
   );
 
   // A fragment, deliberately: <body> is a flex column whose children are the

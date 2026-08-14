@@ -70,7 +70,8 @@ export type GeneratedCollection = {
   /**
    * Which mint is which token, for resolving a connected wallet's holdings
    * offline. `null` where the collection's mints are not its own — Piggy Gang
-   * re-skins SOL Gang's tokens — which is also what disables its wallet UI.
+   * re-skins SOL Gang's tokens; its swapped Core assets are resolved live via
+   * DAS instead (see `WalletSource` in `lib/collections.ts`).
    */
   mints: { path: string; width: number; firstId: number; count: number } | null;
 };
