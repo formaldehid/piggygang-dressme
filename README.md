@@ -35,11 +35,16 @@ each collection you hold and the editor offers them as starting looks. Everythin
 works without a wallet. The connection is read-only — nothing is signed and nothing
 is written on chain.
 
-Ownership is resolved against `public/piggy/<slug>/mints.txt`, a committed index of
-which mint is which token, so the RPC is only ever asked *which mints this wallet
-holds* — never what they are. A working RPC endpoint ships with the app
-(`NEXT_PUBLIC_SOLANA_RPC_URL`, see below); holders who would rather use their own
-can set it in the wallet modal, and that override stays in their browser.
+For the two minted collections, ownership is resolved against
+`public/piggy/<slug>/mints.txt`, a committed index of which mint is which token.
+Piggy Gang's swapped piggies are Metaplex Core assets minted on demand — there is no
+closed list to commit — so the app instead asks the DAS API which assets of the
+Piggy Gang Core collection the wallet holds; each asset's on-chain name `#N` is its
+token id. Either way the RPC is only ever asked *which tokens this wallet holds* —
+never what they are; traits and rarity always come from committed files. A working
+RPC endpoint ships with the app (`NEXT_PUBLIC_SOLANA_RPC_URL`, see below); holders
+who would rather use their own can set it in the wallet modal, and that override
+stays in their browser.
 
 ## Configuration
 
@@ -49,7 +54,9 @@ without either.
 `NEXT_PUBLIC_SOLANA_RPC_URL` overrides the built-in Solana endpoint. Being
 `NEXT_PUBLIC_` it ships in the client bundle and is readable by anyone viewing
 source — unavoidable for a browser-side RPC call, so rate-limit it and restrict it
-to your domains at the provider.
+to your domains at the provider. The endpoint must also support the DAS API
+(`searchAssets`) or Piggy Gang's wallet features degrade to an error message while
+the other collections keep working.
 
 `NEXT_PUBLIC_RENDER_BASE_URL` is the base URL of the bucket holding the official
 minted renders. Leave it unset and the wallet picker composites each piggy from its

@@ -8,17 +8,23 @@ import { useWallet } from "./wallet-provider";
 /**
  * How many of this collection the connected wallet holds.
  *
- * Costs no RPC call — the provider already has the wallet's mints, so this is
- * an intersection against the collection's mint index. Renders nothing until
- * there is something true to say.
+ * Costs no RPC call — the provider already has the wallet's holdings, so this
+ * is an intersection against the collection's mint index, or a plain length
+ * where a Core read supplied the token ids pre-validated. Renders nothing
+ * until there is something true to say.
  */
 export function OwnedCount({ collection }: { collection: ReadyCollection }) {
-  const { ownedMints } = useWallet();
+  const { ownedMints, ownedCore } = useWallet();
   // Keyed by the mints it counted, so it derives back to nothing on disconnect
   // rather than needing a synchronous reset inside the effect.
   const [tally, setTally] = useState<{ source: string[]; count: number } | null>(null);
-  const mints = collection.mints;
-  const count = tally?.source === ownedMints ? tally.count : null;
+  const source = collection.wallet;
+  const mints = source?.kind === "mints" ? source : null;
+  const count = source?.kind === "core"
+    ? (ownedCore?.[source.collection]?.holdings.length ?? null)
+    : tally?.source === ownedMints
+      ? tally.count
+      : null;
 
   useEffect(() => {
     if (!mints || !ownedMints) return;
